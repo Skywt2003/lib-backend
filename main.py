@@ -194,18 +194,18 @@ if (not now_user):
 # 用户相关
 # --------------
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder = 'public', static_url_path = '/')
 
 # 允许跨域请求
-CORS(app, resources = r'/*')
+# CORS(app, resources = r'/*')
 
 # 根目录的友情提示（已测试）
-@app.route('/')
+@app.route('/api/')
 def hello():
     return '<h1>Welcome! </h1> Please refer to the docs to start using APIs. '
 
 # 添加/注册用户功能（已测试）
-@app.route('/users', methods=['POST'])
+@app.route('/api/users', methods=['POST'])
 def add_user():
     now_token = request.headers.get('token')
     new_group = request.json.get('userGroup')
@@ -236,7 +236,7 @@ def add_user():
     return __200_OK()
 
 # 删除用户（已测试）
-@app.route('/users/<got_uid>', methods=['DELETE'])
+@app.route('/api/users/<got_uid>', methods=['DELETE'])
 def del_user(got_uid):
     now_token = request.headers.get('token')
 
@@ -257,7 +257,7 @@ def del_user(got_uid):
     return __200_OK()
 
 # 用户登录（已测试）
-@app.route('/token', methods=['POST'])
+@app.route('/api/token', methods=['POST'])
 def login():
     now_email = request.json.get('userEmail')
     now_pass = request.json.get('userPwd')
@@ -269,7 +269,7 @@ def login():
     return __200_Return_data({'token': get_token(now_user.id)})
 
 # 获取当前用户（自己）的信息（已测试）
-@app.route('/users/self', methods=['GET'])
+@app.route('/api/users/self', methods=['GET'])
 def get_self_info():
     now_token = request.headers.get('token')
 
@@ -290,7 +290,7 @@ def get_self_info():
     })
 
 # 更改用户信息
-@app.route('/users/<got_uid>/info', methods=['POST'])
+@app.route('/api/users/<got_uid>/info', methods=['POST'])
 def post_info(got_uid):
     now_token = request.headers.get('token')
 
@@ -319,7 +319,7 @@ def post_info(got_uid):
     return __200_OK()
 
 # 更改用户密码
-@app.route('/users/<got_uid>/pass', methods=['POST'])
+@app.route('/api/users/<got_uid>/pass', methods=['POST'])
 def post_pass(got_uid):
     now_token = request.headers.get('token')
 
@@ -339,7 +339,7 @@ def post_pass(got_uid):
     got_user.passwd = get_hash(new_pass)
 
 # 查询用户
-@app.route('/users', methods=['GET'])
+@app.route('/api/users', methods=['GET'])
 def search_users():
     now_token = request.headers.get('token')
 
@@ -395,7 +395,7 @@ def search_users():
 # --------------
 
 # 查询书籍
-@app.route('/books', methods=['GET'])
+@app.route('/api/books', methods=['GET'])
 def search_books():
     now_token = request.headers.get('token')
 
@@ -439,7 +439,7 @@ def search_books():
     })
 
 # 添加书籍
-@app.route('/books', methods=['POST'])
+@app.route('/api/books', methods=['POST'])
 def add_book():
     now_token = request.headers.get('token')
 
@@ -462,7 +462,7 @@ def add_book():
     return __200_OK()
 
 # 删除书籍
-@app.route('/books/<got_bid>', methods=['DELETE'])
+@app.route('/api/books/<got_bid>', methods=['DELETE'])
 def del_book(got_bid):
     now_token = request.headers.get('token')
 
@@ -478,7 +478,7 @@ def del_book(got_bid):
     return __200_OK()
 
 # 修改书籍信息
-@app.route('/books/<got_bid>', methods=['PUT'])
+@app.route('/api/books/<got_bid>', methods=['PUT'])
 def change_book_info(got_bid):
     new_name = request.json.get('bookName')
     new_author = request.json.get('bookAuthor')
@@ -512,7 +512,7 @@ def change_book_info(got_bid):
 # --------------
 
 # 借阅图书
-@app.route('/records', methods=['POST'])
+@app.route('/api/records', methods=['POST'])
 def borrow_book():
     now_token = request.headers.get('token')
     try: now_uid = decode_token(now_token)
@@ -539,7 +539,7 @@ def borrow_book():
     return __200_OK()
 
 # 归还图书
-@app.route('/records/<got_rid>', methods=['PUT'])
+@app.route('/api/records/<got_rid>', methods=['PUT'])
 def return_book(got_rid):
     now_token = request.headers.get('token')
     try: now_uid = decode_token(now_token)
@@ -559,7 +559,7 @@ def return_book(got_rid):
     return __200_OK()
 
 # 删除记录
-@app.route('/records/<got_rid>', methods=['DELETE'])
+@app.route('/api/records/<got_rid>', methods=['DELETE'])
 def del_record(got_rid):
     now_token = request.headers.get('token')
     try: now_uid = decode_token(now_token)
@@ -576,7 +576,7 @@ def del_record(got_rid):
     return __200_OK()
 
 # 查询记录
-@app.route('/records', methods=['GET'])
+@app.route('/api/records', methods=['GET'])
 def search_records():
     now_token = request.headers.get('token')
 

@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <link rel="icon" href="./favicon.ico" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>登录</title>
+    <link rel="stylesheet" href="./css/reset.css">
+    <link rel="stylesheet" href="./css/login.css">
+    <link rel="stylesheet" href="./css/element.css">
+</head>
+
+<body>
+    <div class="app">
+        <el-card class="box-card">
+            <div slot="header">
+                <span>易千图书馆</span>
+            </div>
+            <el-tabs v-model="activeName">
+                <el-tab-pane label="登录" name="login">
+                    <el-form label-position="right" ref="formLogin" :rules="formLoginRules" label-width="80px"
+                        :model="formLogin">
+                        <el-form-item label="用户名" prop="email">
+                            <el-input prefix-icon="el-icon-user" placeholder="请输入邮箱" v-model="formLogin.email">
+                            </el-input>
+                        </el-form-item>
+                        <el-form-item label="密码" prop="password">
+                            <el-input prefix-icon="el-icon-lock" placeholder="请输入密码" type="password"
+                                v-model="formLogin.password"></el-input>
+                        </el-form-item>
+                        <el-form-item class="t-right">
+                            <el-button @click="onLoginSubmit('formLogin')" type="primary">登录</el-button>
+                        </el-form-item>
+                    </el-form>
+                </el-tab-pane>
+                <el-tab-pane label="注册" name="regist">
+                    <el-form label-position="right" ref="formRegist" :rules="formRegistRules" label-width="80px"
+                        :model="formRegist">
+                        <el-form-item label="邮箱" prop="email">
+                            <el-input placeholder="请输入邮箱" prefix-icon="el-icon-user" v-model="formRegist.email">
+                            </el-input>
+                        </el-form-item>
+                        <el-form-item label="密码" prop="password">
+                            <el-input placeholder="请输入密码" prefix-icon="el-icon-lock" type="password"
+                                v-model="formRegist.password">
+                            </el-input>
+                        </el-form-item>
+                        <el-form-item label="学号" prop="stuId">
+                            <el-input placeholder="请输入学号" prefix-icon="el-icon-reading" v-model.number="formRegist.stuId">
+                            </el-input>
+                        </el-form-item>
+                        <el-form-item label="姓名" prop="username">
+                            <el-input placeholder="请输入姓名" v-model="formRegist.username"></el-input>
+                        </el-form-item>
+                        <el-form-item label="性别">
+                            <el-radio-group v-model="formRegist.gender">
+                                <el-radio :label="0">未知</el-radio>
+                                <el-radio :label="1">男</el-radio>
+                                <el-radio :label="2">女</el-radio>
+                            </el-radio-group>
+                        </el-form-item>
+                        <el-form-item label="年龄">
+                            <el-input-number size="small" v-model="formRegist.age" controls-position="right" :min="0"
+                                :max="100">
+                            </el-input-number>
+                        </el-form-item>
+                        <el-form-item label="简介">
+                            <el-input :autosize="{ minRows: 4, maxRows: 8}" maxlength="200" show-word-limit
+                                type="textarea" placeholder="请输入简介" v-model="formRegist.bio"></el-input>
+                        </el-form-item>
+                        <el-form-item class="t-right">
+                            <el-button @click="onRegistSubmit('formRegist')" type="primary">注册</el-button>
+                        </el-form-item>
+                    </el-form>
+                </el-tab-pane>
+            </el-tabs>
+        </el-card>
+    </div>
+
+    <script src="./js/vue.js"></script>
+    <script src="./js/element.js"></script>
+
+    <script src="./js/axios.js"></script>
+    <script src="./mock/mock.js"></script>
+    <script src="./mock/index.js"></script>
+    <script src="./js/requestConfig.js"></script>
+
+    <script src="./js/loginInfo.js"></script>
+    <script>
+        new Vue({
+            el: '.app',
+            async mounted() {
+                // await loginInfo.update()
+                if (loginInfo.isLogin()) {
+                    location.href = '/user.html'
+                }
+            },
+            data() {
+                let checkPwd = (rule, value, callback) => {
+                    if (value.length < 8 || value.length > 16) {
+                        callback(new Error('密码长度为8~16个字符'))
+                    }
+                    if (/^(?=.*\d)(?=.*[a-zA-Z])[a-zA-Z0-9]{8,16}$/.test(value)) {
+                        callback();
+                    } else {
+                        callback(new Error('密码需要由大小写字母加数字组成（不包含特殊字符）'))
+                    }
+                }
+                return {
+                    activeName: 'login',
+                    formLogin: {
+                        email: 'abc@a.cn',
+                        password: 'aasdfasds1'
+                    },
+                    formLoginRules: {
+                        email: [
+                            { required: true, message: '请输入用户名', trigger: 'blur' },
+                            { type: 'email', message: '请输入正确的邮箱地址', trigger: 'blur' }],
+                        password: [
+                            { required: true, message: '请输入密码', trigger: 'blur' },
+                            { validator: checkPwd, trigger: 'blur' }]
+                    },
+                    formRegistRules: {
+                        email: [
+                            { required: true, message: '请输入用户名', trigger: 'blur' },
+                            { type: 'email', message: '请输入正确的邮箱地址', trigger: 'blur' }],
+                        password: [
+                            { required: true, message: '请输入密码', trigger: 'blur' },
+                            { validator: checkPwd, trigger: 'blur' }],
+                        stuId: [
+                            { required: true, message: '请输入学号', trigger: 'blur' },
+                            { type: 'number', min: 100000000000, max: 999999999999, message: '学号必须是12位数字', trigger: 'blur' }],
+                        username: [
+                            { required: true, message: '请输入姓名', trigger: 'blur' },
+                            { type: 'string', max: 10, message: '姓名长度不能超过10个字符', trigger: 'blur' }],
+                    },
+                    formRegist: {
+                        email: 'a@a.com',
+                        password: 'asdfasdg1',
+                        stuId: 202108010501,
+                        username: '你好',
+                        gender: 0,
+                        age: 0,
+                        bio: ''
+                    }
+                }
+            },
+            methods: {
+                onRegistSubmit(formName) {
+                    this.$refs[formName].validate((valid) => {
+                        if (valid) {
+                            // 验证通过
+                            axios.post('/users', {
+                                "userEmail": this.formRegist.email,
+                                "userPwd": this.formRegist.password,
+                                "userStdId": this.formRegist.stuId + '',
+                                "userName": this.formRegist.username,
+                                "userGender": this.formRegist.gender,
+                                "userAge": this.formRegist.age,
+                                "userBio": this.formRegist.bio
+                            }).then((v) => {
+                                if (v.status == 200) {
+                                    this.$message.success('注册成功！')
+                                    setTimeout(() => {
+                                        location.reload()
+                                    }, 500)
+                                } else {
+                                    this.$message.error(v.msg)
+                                }
+                            }).catch((v) => {
+                                this.$message.error('网络错误')
+                            })
+                        } else {
+                            // 验证失败
+                            return false;
+                        }
+                    });
+                },
+                onLoginSubmit(formName) {
+                    this.$refs[formName].validate((valid) => {
+                        if (valid) {
+                            // 验证通过
+                            axios.post('/token', {
+                                'userEmail': this.formLogin.email,
+                                'userPwd': this.formLogin.password
+                            }).then((v) => {
+                                if (v.status == 200) {
+                                    this.$message.success('登录成功！')
+                                    loginInfo.login(v.data.token)
+                                    setTimeout(() => {
+                                        location.href = '/index.html'
+                                    }, 500)
+                                } else {
+                                    this.$message.error(v.msg)
+                                }
+                            }).catch((v) => {
+                                this.$message.error('网络错误')
+                            })
+                        } else {
+                            // 验证失败
+                            return false;
+                        }
+                    });
+                },
+            }
+        })
+    </script>
+</body>
+
+</html>

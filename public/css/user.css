@@ -1,0 +1,58 @@
+.app {
+    width: 1200px;
+    margin: 0 auto;
+}
+
+.header {
+    height: 40px;
+    line-height: 40px;
+    display: flex;
+    justify-content: space-between;
+}
+
+.header h1 {
+    font-size: 20px;
+    color: #409eff;
+}
+
+.header .t-small {
+    font-size: 16px;
+}
+
+.avatar {
+    margin-top: 100px;
+    margin-bottom: 50px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.avatar .info {
+    display: flex;
+    align-items: center;
+}
+
+.avatar .info h2 {
+    font-size: 24px;
+    margin-left: 20px;
+}
+
+.avatar .info h2 .male {
+    color: #409eff;
+    font-weight: bold;
+}
+
+.avatar .info h2 .female {
+    color: #f09ad3;
+    font-weight: bold;
+}
+
+.records-pane {
+    display: flex;
+    flex-direction: column;
+}
+
+.records-pagination {
+    margin-top: 40px;
+    align-self: center;
+}

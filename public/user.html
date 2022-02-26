@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <link rel="icon" href="./favicon.ico" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>个人中心</title>
+    <link rel="stylesheet" href="./css/reset.css">
+    <link rel="stylesheet" href="./css/user.css">
+    <link rel="stylesheet" href="./css/element.css">
+</head>
+
+<body>
+    <div class="app">
+        <div class="header">
+            <div class="logo">
+                <h1><a href="/index.html">易千图书馆</a> <span class="t-small">个人中心</span></h1>
+            </div>
+        </div>
+        <div class="avatar">
+            <div class="info">
+                <el-avatar :size="80" src="https://cube.elemecdn.com/3/7c/3ea6beec64369c2642b92c6726f1epng.png">
+                </el-avatar>
+                <h2>{{userInfo.username}}
+                    <i v-if="userInfo.gender === 1" class="male el-icon-male"></i>
+                    <i v-else-if="userInfo.gender === 2" class="female el-icon-female"></i>
+                </h2>
+            </div>
+            <div class="btns">
+                <el-button type="danger" @click="onLogout" plain>退出登录</el-button>
+            </div>
+        </div>
+        <el-tabs v-model="activeTabName">
+            <el-tab-pane label="借阅记录" class="records-pane" name="records">
+                <h2 style="margin: 20px 0 40px 0;padding-left: 20px;">借阅记录</h2>
+                <div class="records-form">
+                    <el-card shadow="never">
+                        <el-form :inline="true" :model="formSearch">
+                            <el-row>
+                                <el-col>
+                                    <el-form-item>
+                                        <el-input style="width: 500px;" v-model="formSearch.kw" placeholder="请输入关键字">
+                                            <el-select slot="prepend" v-model="formSearch.type" style="width: 110px;"
+                                                placeholder="搜索方式">
+                                                <el-option label="图书名称" value="bookName"></el-option>
+                                                <!-- <el-option label="ISBN" value="isbn"></el-option>
+                                                <el-option label="作者" value="author"></el-option> -->
+                                            </el-select>
+                                        </el-input>
+                                    </el-form-item>
+                                    <el-form-item>
+                                        <el-select v-model="formSearch.returned" style="width: 120px;"
+                                            placeholder="归还状态">
+                                            <el-option label="全部" value="all"></el-option>
+                                            <el-option label="已归还" value="1"></el-option>
+                                            <el-option label="尚未归还" value="0"></el-option>
+                                        </el-select>
+                                    </el-form-item>
+                                </el-col>
+                            </el-row>
+                            <el-row>
+                                <el-col>
+                                    <el-form-item label="借阅时间：">
+                                        <el-date-picker v-model="formSearch.borrowDate" type="daterange"
+                                            range-separator="至" start-placeholder="开始日期" end-placeholder="结束日期">
+                                        </el-date-picker>
+                                    </el-form-item>
+                                    <el-form-item label="归还时间：">
+                                        <el-date-picker v-model="formSearch.returnDate" type="daterange"
+                                            range-separator="至" start-placeholder="开始日期" end-placeholder="结束日期">
+                                        </el-date-picker>
+                                    </el-form-item>
+                                    <el-form-item>
+                                        <el-button @click="onSearch" style="width: 100px;" icon="el-icon-search"
+                                            type="primary">搜索
+                                        </el-button>
+                                    </el-form-item>
+                                </el-col>
+                            </el-row>
+                        </el-form>
+                    </el-card>
+                </div>
+                <div class="records-data">
+                    <el-table :data="recordsData" border style="width: 100%">
+                        <el-table-column prop="bookName" label="图书名称" width="300">
+                        </el-table-column>
+                        <el-table-column prop="bookAuthor" label="作者">
+                        </el-table-column>
+                        <el-table-column prop="bookISBN" label="ISBN">
+                        </el-table-column>
+                        <el-table-column label="借阅时间">
+                            <template slot-scope="scope">
+                                {{ scope.row.rcdBorrowDate | dateFormat }}
+                            </template>
+                        </el-table-column>
+                        <el-table-column prop="rcdReturnDate" label="归还时间">
+                            <template slot-scope="scope">
+                                {{ scope.row.rcdReturnDate | dateFormat }}
+                            </template>
+                        </el-table-column>
+                        <el-table-column label="归还状态" width="100">
+                            <template slot-scope="scope">
+                                <el-tag v-if="scope.row.rcdReturned" type="success" size="medium">已归还</el-tag>
+                                <el-tag v-else size="medium" type="warning">尚未归还</el-tag>
+                            </template>
+                        </el-table-column>
+                        <el-table-column label="操作" width="80">
+                            <template slot-scope="scope">
+                                <el-button v-if="!scope.row.rcdReturned"
+                                    @click="onReturnBook(scope.$index, scope.row.rcdId)" type="primary"
+                                    :loading="scope.row.loading" size="small">归还</el-button>
+                            </template>
+                        </el-table-column>
+                    </el-table>
+                </div>
+                <div class="records-pagination" style="margin-bottom: 50px;">
+                    <el-pagination hide-on-single-page @current-change="currnetPageChange" background
+                        layout="prev, pager, next" :current-page="pagination.page" :total="pagination.total">
+                    </el-pagination>
+                </div>
+            </el-tab-pane>
+            <el-tab-pane label="修改个人信息" name="userinfo">
+                <h2 style="margin: 20px 0 40px 0;padding-left: 20px;">修改个人信息</h2>
+                <el-form style="width: 50%;" label-position="right" ref="formUserInfo" :rules="formUserInfoRules"
+                    label-width="80px" :model="formUserInfo">
+                    <el-form-item label="邮箱" prop="email">
+                        <el-input placeholder="请输入邮箱" prefix-icon="el-icon-user" v-model="formUserInfo.email">
+                        </el-input>
+                    </el-form-item>
+                    <el-form-item label="学号" prop="stuId">
+                        <el-input placeholder="请输入学号" prefix-icon="el-icon-reading" v-model.number="formUserInfo.stuId">
+                        </el-input>
+                    </el-form-item>
+                    <el-form-item label="姓名" prop="username">
+                        <el-input placeholder="请输入姓名" v-model="formUserInfo.username"></el-input>
+                    </el-form-item>
+                    <el-form-item label="性别">
+                        <el-radio-group v-model="formUserInfo.gender">
+                            <el-radio :label="0">未知</el-radio>
+                            <el-radio :label="1">男</el-radio>
+                            <el-radio :label="2">女</el-radio>
+                        </el-radio-group>
+                    </el-form-item>
+                    <el-form-item label="年龄">
+                        <el-input-number size="small" v-model="formUserInfo.age" controls-position="right" :min="0"
+                            :max="100">
+                        </el-input-number>
+                    </el-form-item>
+                    <el-form-item label="简介">
+                        <el-input :autosize="{ minRows: 4, maxRows: 8}" maxlength="200" show-word-limit type="textarea"
+                            placeholder="请输入简介" v-model="formUserInfo.bio"></el-input>
+                    </el-form-item>
+                    <el-form-item class="t-right">
+                        <el-button @click="onSaveUserInfo('formUserInfo')" type="primary">保存修改</el-button>
+                    </el-form-item>
+                </el-form>
+            </el-tab-pane>
+            <el-tab-pane label="安全设置" name="modifyPassword">
+                <h2 style="margin: 20px 0 40px 0;padding-left: 20px;">修改密码</h2>
+                <el-form style="width: 50%;" ref="formModifyPassword" :rules="formModifyPasswordRules"
+                    label-position="right" label-width="150px" :model="formModifyPassword">
+                    <el-form-item label="旧密码：" prop="pwd">
+                        <el-input prefix-icon="el-icon-lock" placeholder="请输入当前密码" v-model="formModifyPassword.pwd">
+                        </el-input>
+                    </el-form-item>
+                    <el-form-item label="新密码：" prop="newPwd">
+                        <el-input prefix-icon="el-icon-lock" placeholder="请输入新密码" v-model="formModifyPassword.newPwd">
+                        </el-input>
+                    </el-form-item>
+                    <el-form-item label="再次输入新密码：" prop="newPwdAgain">
+                        <el-input prefix-icon="el-icon-lock" placeholder="请再次输入新密码"
+                            v-model="formModifyPassword.newPwdAgain"></el-input>
+                    </el-form-item>
+                    <el-form-item>
+                        <el-button @click="onModifyPwd('formModifyPassword')" type="primary">确认修改</el-button>
+                    </el-form-item>
+                </el-form>
+                <el-divider></el-divider>
+                <h2 style="margin: 40px 0;padding-left: 20px;">注销账号</h2>
+                <el-form style="width: 50%;" label-position="right" label-width="150px">
+                    <el-form-item class="t-right">
+                        <el-button type="danger" @click="onRemoveSelf">注销</el-button>
+                    </el-form-item>
+                </el-form>
+            </el-tab-pane>
+        </el-tabs>
+    </div>
+
+    <script src="./js/vue.js"></script>
+    <script src="./js/element.js"></script>
+    <script src="./js/axios.js"></script>
+
+    <script src="./mock/mock.js"></script>
+    <script src="./mock/index.js"></script>
+
+    <script src="./js/requestConfig.js"></script>
+    <script src="./js/loginInfo.js"></script>
+    <script>
+        new Vue({
+            el: '.app',
+            data() {
+                let checkPwd = (rule, value, callback) => {
+                    if (value.length < 8 || value.length > 16) {
+                        callback(new Error('密码长度为8~16个字符'))
+                    }
+                    if (/^(?=.*\d)(?=.*[a-zA-Z])[a-zA-Z0-9]{8,16}$/.test(value)) {
+                        callback();
+                    } else {
+                        callback(new Error('密码需要由大小写字母加数字组成（不包含特殊字符）'))
+                    }
+                }
+                let checkNewPwdAgain = (rule, value, callback) => {
+                    if (value === this.formModifyPassword.newPwd) {
+                        callback();
+                    } else {
+                        callback(new Error('两次输入的密码不一致'))
+                    }
+                }
+                let checkNewPwd = (rule, value, callback) => {
+                    if (value !== this.formModifyPassword.pwd) {
+                        callback();
+                    } else {
+                        callback(new Error('新密码与旧密码不能相同'))
+                    }
+                }
+                return {
+                    userInfo: {
+                        username: '',
+                        gender: 0
+                    },
+                    formSearch: {
+                        type: "bookName",
+                        kw: "",
+                        returned: "all",
+                        borrowDate: null,
+                        returnDate: null,
+                    },
+                    currentFormSearch: {
+                        type: "bookName",
+                        kw: "",
+                        returned: "all",
+                        borrowDate: null,
+                        returnDate: null
+                    },
+                    pagination: {
+                        page: 1,
+                        total: 1
+                    },
+                    formUserInfo: {
+                        email: '',
+                        stuId: '',
+                        username: '',
+                        gender: 0,
+                        age: 0,
+                        bio: ''
+                    },
+                    formUserInfoRules: {
+                        email: [
+                            { required: true, message: '请输入用户名', trigger: 'blur' },
+                            { type: 'email', message: '请输入正确的邮箱地址', trigger: 'blur' }],
+                        stuId: [
+                            { required: true, message: '请输入学号', trigger: 'blur' },
+                            { type: 'number', min: 100000000000, max: 999999999999, message: '学号必须是12位数字', trigger: 'blur' }],
+                        username: [
+                            { required: true, message: '请输入姓名', trigger: 'blur' },
+                            { type: 'string', max: 10, message: '姓名长度不能超过10个字符', trigger: 'blur' }],
+                    },
+                    formModifyPassword: {
+                        pwd: '134243asdfasdfd',
+                        newPwd: '134243asdfasdf',
+                        newPwdAgain: '134243asdfasdf'
+                    },
+                    formModifyPasswordRules: {
+                        pwd: [
+                            { required: true, message: '内容不能为空', trigger: 'blur' },
+                            { validator: checkPwd, trigger: 'blur' }],
+                        newPwd: [
+                            { required: true, message: '内容不能为空', trigger: 'blur' },
+                            { validator: checkPwd, trigger: 'blur' },
+                            { validator: checkNewPwd, trigger: 'blur' }],
+                        newPwdAgain: [
+                            { required: true, message: '内容不能为空', trigger: 'blur' },
+                            { validator: checkPwd, trigger: 'blur' },
+                            { validator: checkNewPwdAgain, trigger: 'blur' }]
+                    },
+                    activeTabName: 'records',
+                    recordsData: [
+                        // {
+                        //     loading: false,
+                        //     "rcdId": 123,
+                        //     "rcdUserID": 123456,
+                        //     "rcdBookID": 752136,
+                        //     "rcdBorrowDate": 1645362141170,
+                        //     "rcdReturnDate": 1645362153685,
+                        //     "rcdReturned": 1, // 归还状态
+                        //     "bookName": "c++程序设计教程（通用版）（第三版）",
+                        //     "bookAuthor": "钱能",
+                        //     "bookISBN": "978-7825-1236-789",
+                        //     "bookPress": "湖南大学出版社",
+                        //     "bookExistingNumber": 1, // 现存总数量
+                        //     "bookTotalNumber": 16, // 总数量
+                        //     "userEmail": "abc@email.com",
+                        //     "userStdId": "202108010500",
+                        //     "userName": "张三",
+                        //     "userGender": 1,
+                        //     "userAge": 16,
+                        //     "userBio": "",
+                        //     "userGroup": 1
+                        // }
+                    ]
+                }
+            },
+            async mounted() {
+                await loginInfo.update()
+                if (loginInfo.isLogin()) {
+                    this.userInfo.username = loginInfo.user.userName
+                    this.userInfo.gender = loginInfo.user.userGender
+
+                    this.formUserInfo = {
+                        email: loginInfo.user.userEmail,
+                        stuId: +loginInfo.user.userStuId,
+                        username: loginInfo.user.userName,
+                        gender: loginInfo.user.userGender,
+                        age: loginInfo.user.userAge,
+                        bio: loginInfo.user.userBio
+                    }
+
+                    this.onUpdateRecordsData()
+                } else {
+                    location.href = '/login.html'
+                }
+            },
+            filters: {
+                dateFormat(val) {
+                    let date = new Date(+val);
+                    return `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日`;
+                }
+            },
+            methods: {
+                onRemoveSelf() {
+                    this.$confirm('注销账号后无法恢复，确定要注销吗？', '提示', {
+                        confirmButtonText: '确定',
+                        cancelButtonText: '取消',
+                        type: 'warning'
+                    }).then(() => {
+                        axios.delete(`/users/${loginInfo.user.userId}`, {
+                            headers: {
+                                'token': loginInfo.getToken()
+                            }
+                        }).then((v) => {
+                            if (v.status === 200) {
+                                this.$message.success('注销成功!');
+                                loginInfo.logout()
+                                location.href = '/index.html'
+                            } else {
+                                this.$message.warning(v.msg);
+                            }
+                        })
+                    }).catch(() => {
+                        this.$message({
+                            type: 'info',
+                            message: '已取消'
+                        });
+                    });
+                },
+                onModifyPwd(formName) {
+                    this.$refs[formName].validate((valid) => {
+                        if (valid) {
+                            // 验证通过
+                            axios.put(`/users/${loginInfo.user.userId}/password`, {
+                                "userPwd": this.formModifyPassword.pwd,
+                                "userNewPwd": this.formModifyPassword.newPwd
+                            }, {
+                                headers: {
+                                    'token': loginInfo.getToken()
+                                }
+                            }).then((v) => {
+                                if (v.status == 200) {
+                                    this.$message.success('修改密码成功！请重新登录')
+                                    setTimeout(() => {
+                                        loginInfo.logout()
+                                        location.href = '/login.html'
+                                    }, 500)
+                                } else {
+                                    this.$message.error(v.msg)
+                                }
+                            })
+                        } else {
+                            // 验证失败
+                            return false;
+                        }
+                    });
+                },
+                onSaveUserInfo(formName) {
+                    this.$refs[formName].validate((valid) => {
+                        if (valid) {
+                            // 验证通过
+                            axios.put(`/users/${loginInfo.user.userId}`, {
+                                "userEmail": this.formUserInfo.email,
+                                "userStuId": this.formUserInfo.stuId + '',
+                                "userName": this.formUserInfo.username,
+                                "userGender": this.formUserInfo.gender,
+                                "userAge": this.formUserInfo.age,
+                                "userBio": this.formUserInfo.bio
+                            }, {
+                                headers: {
+                                    'token': loginInfo.getToken()
+                                }
+                            }).then((v) => {
+                                if (v.status == 200) {
+                                    this.$message.success('保存成功！')
+                                    setTimeout(() => {
+                                        location.reload()
+                                    }, 500)
+                                } else {
+                                    this.$message.error(v.msg)
+                                }
+                            })
+                        } else {
+                            // 验证失败
+                            return false;
+                        }
+                    });
+                },
+                onLogout() {
+                    loginInfo.logout()
+                    location.href = '/login.html'
+                },
+                onReturnBook(index, rcdId) {
+                    let date = Date.now()
+                    this.recordsData[index].loading = true
+                    axios.put(`/records/${rcdId}`, {
+                        "rcdReturnDate": date
+                    }, {
+                        headers: {
+                            'token': loginInfo.getToken()
+                        }
+                    }).then((v) => {
+                        if (v.status == 200) {
+                            this.$message.success('归还成功')
+                            this.recordsData[index].rcdReturned = 1
+                            this.recordsData[index].rcdReturnDate = date
+                        } else {
+                            this.$message.warning(v.msg)
+                            this.recordsData[index].loading = false
+                        }
+                    })
+                },
+                onSearch() {
+                    let defaultObj = {
+                        type: "bookName",
+                        kw: "",
+                        returned: "all",
+                        borrowDate: null,
+                        returnDate: null
+                    }
+                    let form = this.formSearch
+                    let currentForm = this.currentFormSearch
+                    // 是否完全相等
+                    if (JSON.stringify(form) === JSON.stringify(currentForm)) {
+                        return;
+                    }
+                    // 是否是默认值
+                    if (JSON.stringify(form) === JSON.stringify(defaultObj)) {
+                        console.log('默认值')
+                        this.onUpdateRecordsData({});
+                        this.currentFormSearch = { ...defaultObj }
+                        this.pagination.page = 1
+                        return;
+                    }
+
+                    let obj = {};
+                    if (form.borrowDate) {
+                        obj.minBorrowDate = form.borrowDate[0].getTime()
+                        obj.maxBorrowDate = form.borrowDate[1].getTime()
+                    }
+                    if (form.returnDate) {
+                        obj.minReturnDate = form.returnDate[0].getTime()
+                        obj.maxReturnDate = form.returnDate[1].getTime()
+                    }
+                    if (form.returned != 'all') {
+                        obj.returned = +form.returned
+                    }
+                    obj.bookName = form.kw
+                    this.currentFormSearch = { ...this.formSearch }
+                    this.pagination.page = 1
+                    this.onUpdateRecordsData(obj);
+                },
+                currnetPageChange(val) {
+                    let obj = {};
+                    let form = this.currentFormSearch
+                    if (form.borrowDate) {
+                        obj.minBorrowDate = form.borrowDate[0].getTime()
+                        obj.maxBorrowDate = form.borrowDate[1].getTime()
+                    }
+                    if (form.returnDate) {
+                        obj.minReturnDate = form.returnDate[0].getTime()
+                        obj.maxReturnDate = form.returnDate[1].getTime()
+                    }
+                    if (form.returned != 'all') {
+                        obj.returned = +form.returned
+                    }
+                    if (form.kw != '') {
+                        obj.bookName = form.kw
+                    }
+                    obj.page = val
+                    this.onUpdateRecordsData(obj);
+                    this.pagination.page = val;
+                },
+                onUpdateRecordsData(obj = {}) {
+                    axios.get('/records', {
+                        headers: {
+                            'token': loginInfo.getToken()
+                        },
+                        params: {
+                            userId: loginInfo.user.userId,
+                            ...obj
+                        }
+                    }).then((v) => {
+                        if (v.status == 200) {
+                            v.data.records.forEach((v, i) => {
+                                v.loading = false
+                            })
+                            this.recordsData = v.data.records
+                            this.pagination.total = v.data["total-count"]
+                        } else {
+                            this.$message.warning(v.msg)
+                        }
+                    })
+                }
+            }
+        })
+    </script>
+</body>
+
+</html>

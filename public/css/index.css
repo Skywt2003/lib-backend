@@ -1,0 +1,80 @@
+.app {
+    width: 1200px;
+    margin: 0 auto;
+}
+
+[v-cloak] {
+    display: none;
+}
+
+.header {
+    height: 40px;
+    line-height: 40px;
+    display: flex;
+    justify-content: space-between;
+}
+
+.header h1 {
+    font-size: 20px;
+    color: #409eff;
+    cursor: default;
+}
+
+.login .userInfo {
+    display: flex;
+    align-items: center;
+}
+
+.search {
+    position: relative;
+    margin: 50px 0;
+}
+
+.title-logo {
+    position: absolute;
+    width: 300px;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.search .el-form {
+    display: flex;
+    width: 700px;
+    margin: 0 auto;
+    /* padding-top: 350px; */
+    transition: padding .3s;
+}
+
+.search-type {
+    width: 145px;
+    text-align: center;
+}
+
+.search-kw input {
+    width: 400px;
+}
+
+.result {
+    display: flex;
+    flex-direction: column;
+}
+
+.result .head {
+    display: flex;
+    justify-content: space-between;
+    margin: 40px 0;
+}
+
+.result .head h3 {
+    font-size: 20px;
+}
+
+.result .el-card {
+    margin-bottom: 10px;
+}
+
+.result .foot {
+    margin: 40px 0;
+    align-self: center;
+}
+

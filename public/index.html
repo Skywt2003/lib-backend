@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <link rel="icon" href="./favicon.ico" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>首页</title>
+    <link rel="stylesheet" href="./css/reset.css">
+    <link rel="stylesheet" href="./css/index.css">
+    <link rel="stylesheet" href="./css/element.css">
+</head>
+
+<body>
+    <div class="app" v-cloak>
+        <div class="header">
+            <div class="logo">
+                <h1>易千图书馆</h1>
+            </div>
+            <div class="login">
+                <el-dropdown @command="dropdown" v-if="userInfo.logined">
+                    <a class="userInfo" href="/user.html">
+                        <span style="margin-right: 10px;">{{userInfo.username}}</span>
+                        <el-avatar size="medium"
+                            src="https://cube.elemecdn.com/3/7c/3ea6beec64369c2642b92c6726f1epng.png"></el-avatar>
+                    </a>
+                    <el-dropdown-menu slot="dropdown">
+                        <el-dropdown-item v-if="userInfo.userGroup === 0" command="admin">管理面板</el-dropdown-item>
+                        <el-dropdown-item command="user">个人中心</el-dropdown-item>
+                        <el-dropdown-item command="logout">退出登录</el-dropdown-item>
+                    </el-dropdown-menu>
+                </el-dropdown>
+                <el-link v-else :underline="false" href="/login.html">登录/注册</el-link>
+            </div>
+        </div>
+        <div class="search">
+            <transition name="el-fade-in-linear">
+                <img v-show="!searchResult.haveResult" src="./img/title-logo.png" class="title-logo" alt="">
+            </transition>
+
+            <el-form :style="{paddingTop: !searchResult.haveResult * 350 + 'px'}" :inline="true" :model="formSearch">
+                <el-form-item class="search-type">
+                    <el-select v-model="formSearch.type" placeholder="搜索方式">
+                        <el-option label="图书名称" value="name"></el-option>
+                        <el-option label="ISBN" value="isbn"></el-option>
+                        <el-option label="作者" value="author"></el-option>
+                    </el-select>
+                </el-form-item>
+                <el-form-item class="search-kw">
+                    <el-input clearable v-model="formSearch.kw" placeholder="请输入关键字"></el-input>
+                </el-form-item>
+                <el-form-item>
+                    <el-button @click="onSearch" type="primary">搜索</el-button>
+                </el-form-item>
+            </el-form>
+        </div>
+        <transition name="el-fade-in-linear">
+            <div class="result" v-show="searchResult.haveResult">
+                <div class="head">
+                    <h3>搜索结果</h3>
+                    <el-pagination v-show="searchResult.haveResult" background layout="prev, pager, next"
+                        @current-change="currnetPageChange" :current-page="pagination.currentPage"
+                        :page-size="pagination.pageSize" :total="pagination.total">
+                    </el-pagination>
+                </div>
+                <div class="list" v-loading="searchResult.loading" element-loading-text="正在搜索">
+                    <el-card v-for="(v, i) in searchResult.data">
+                        <el-descriptions :title="v.bookName">
+                            <template slot="extra">
+                                <el-button type="primary" @click="borrow(i, v.bookId)"
+                                    :disabled="!v.bookExistingNumber">借阅
+                                </el-button>
+                            </template>
+                            <el-descriptions-item label="作者">{{v.bookAuthor}}</el-descriptions-item>
+                            <el-descriptions-item label="ISBN">{{v.bookISBN}}</el-descriptions-item>
+                            <el-descriptions-item label="出版社">{{v.bookPress}}</el-descriptions-item>
+                            <el-descriptions-item label="库存">{{v.bookExistingNumber}} / {{v.bookTotalNumber}}
+                            </el-descriptions-item>
+                        </el-descriptions>
+                    </el-card>
+                </div>
+                <div class="foot" v-show="searchResult.haveResult">
+                    <el-pagination background layout="prev, pager, next" @current-change="currnetPageChange"
+                        :current-page="pagination.currentPage" :page-size="pagination.pageSize"
+                        :total="pagination.total"></el-pagination>
+                </div>
+            </div>
+        </transition>
+
+    </div>
+    <script src="./js/vue.js"></script>
+    <script src="./js/element.js"></script>
+    <script src="./js/axios.js"></script>
+
+    <script src="./mock/mock.js"></script>
+    <script src="./mock/index.js"></script>
+
+    <script src="./js/requestConfig.js"></script>
+    <script src="./js/loginInfo.js"></script>
+    <script>
+        new Vue({
+            el: '.app',
+            data() {
+                return {
+                    userInfo: {
+                        logined: false,
+                        username: '',
+                        userGroup: 1
+                    },
+                    searchResult: {
+                        currentKw: '',
+                        currentType: '',
+                        haveResult: false,
+                        loading: true,
+                        data: []
+                    },
+                    formSearch: {
+                        type: "name",
+                        kw: ""
+                    },
+                    pagination: {
+                        currentPage: 1,
+                        pageSize: 10,
+                        total: 1
+                    }
+                }
+            },
+            async mounted() {
+                await loginInfo.update()
+                if (loginInfo.isLogin()) {
+                    this.userInfo.logined = true
+                    this.userInfo.username = loginInfo.user.userName
+                    this.userInfo.userGroup = loginInfo.user.userGroup
+                }
+            },
+            methods: {
+                borrow(index, rcdBookID) {
+                    if (loginInfo.isLogin()) {
+                        axios.post('/records', {
+                            rcdBookID,
+                            rcdUserID: loginInfo.user.userId,
+                            rcdBorrowDate: Date.now()
+                        },
+                            {
+                                headers: {
+                                    token: loginInfo.getToken()
+                                },
+                            }).then((data) => {
+                                if (data.status == 200) {
+                                    this.$message.success('借阅成功！')
+                                    this.searchResult.data[index].bookExistingNumber--
+                                } else {
+                                    this.$message.warning('借阅失败！')
+                                }
+                            }).catch(() => {
+                                this.$message.error('借阅失败，网络连接错误')
+                            })
+                    } else {
+                        this.$message.warning('请先登录')
+                        setTimeout(() => {
+                            location.href = '/login.html'
+                        }, 1000)
+                    }
+                },
+                dropdown(c) {
+                    if (c == 'logout') {
+                        this.userInfo.logined = false
+                        loginInfo.logout()
+                        location.reload()
+                    } else if(c == 'user') {
+                        location.href = '/user.html'
+                    } else if(c == 'admin') {
+                        location.href = '/admin/index.html'
+                    }
+
+                },
+                onSearch() {
+                    let { kw, type } = this.formSearch
+
+                    // 当关键词为空时
+                    if (kw.trim() == "") {
+                        if (this.searchResult.haveResult) {
+                            this.searchResult.haveResult = false
+
+                        } else {
+                            this.$message('请输入关键词')
+                        }
+                        return
+                    }
+
+                    if (!loginInfo.isLogin()) {
+                        this.$message.warning('请先登录')
+                        setTimeout(() => {
+                            location.href = '/login.html'
+                        }, 1000);
+                        return;
+                    }
+
+                    // 重复点击搜索按钮
+                    if (this.searchResult.haveResult &&
+                        kw == this.searchResult.currentKw &&
+                        type == this.searchResult.currentType) {
+                        return
+                    }
+
+                    // 保留当前搜索的关键字和类型，换页时用到
+                    this.searchResult.currentKw = kw;
+                    this.searchResult.currentType = type;
+                    this.searchResult.haveResult = true;
+
+                    axios.get(`/books?${type}=${kw}`)
+                        .then((v) => {
+                            this.searchResult.loading = false; // 关闭加载动画
+                            this.searchResult.data = v.data.books;
+                            if (v.data.books.length == 0) {
+                                this.$message.info('未找到！')
+                            }
+                            this.pagination.total = v.data['total-count']
+                        })
+                        .catch((err) => {
+                            this.searchResult.loading = false; // 关闭加载动画
+                            this.searchResult.haveResult = false; // 关闭搜索结果
+                            this.$message.error('搜索失败')
+                        })
+                },
+                currnetPageChange(val) {
+                    this.searchResult.loading = true;
+                    let kw = this.searchResult.currentKw;
+                    let type = this.searchResult.currentType;
+                    axios.get(`/books?${type}=${kw}&page=${val}`)
+                        .then((v) => {
+                            this.searchResult.loading = false; // 关闭加载动画
+                            this.searchResult.data = v.data.books;
+                        })
+                        .catch((err) => {
+                            this.searchResult.loading = false; // 关闭加载动画
+                            this.$message.error('搜索失败')
+                        })
+                    this.pagination.currentPage = val;
+                }
+            }
+        })
+    </script>
+</body>
+
+</html>
