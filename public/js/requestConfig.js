@@ -1,5 +1,4 @@
-// axios.defaults.baseURL = '/api';
-axios.defaults.baseURL = 'http://127.0.0.1:5000/api';
+axios.defaults.baseURL = '/api';
 
 // 添加请求拦截器
 axios.interceptors.request.use(function (config) {

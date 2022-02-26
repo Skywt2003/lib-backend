@@ -111,8 +111,8 @@
                 return {
                     activeName: 'login',
                     formLogin: {
-                        email: 'abc@a.cn',
-                        password: 'aasdfasds1'
+                        email: 'a@a.com',
+                        password: 'asdfasdg1'
                     },
                     formLoginRules: {
                         email: [
@@ -155,7 +155,7 @@
                             axios.post('/users', {
                                 "userEmail": this.formRegist.email,
                                 "userPwd": this.formRegist.password,
-                                "userStdId": this.formRegist.stuId + '',
+                                "userStuId": this.formRegist.stuId + '',
                                 "userName": this.formRegist.username,
                                 "userGender": this.formRegist.gender,
                                 "userAge": this.formRegist.age,

@@ -168,9 +168,9 @@
                         this.userInfo.logined = false
                         loginInfo.logout()
                         location.reload()
-                    } else if(c == 'user') {
+                    } else if (c == 'user') {
                         location.href = '/user.html'
-                    } else if(c == 'admin') {
+                    } else if (c == 'admin') {
                         location.href = '/admin/index.html'
                     }
 
@@ -209,19 +209,27 @@
                     this.searchResult.currentType = type;
                     this.searchResult.haveResult = true;
 
-                    axios.get(`/books?${type}=${kw}`)
+                    axios.get(`/books?${type}=${kw}`, {
+                        headers: {
+                            'token': getToken()
+                        }
+                    })
                         .then((v) => {
                             this.searchResult.loading = false; // 关闭加载动画
-                            this.searchResult.data = v.data.books;
-                            if (v.data.books.length == 0) {
-                                this.$message.info('未找到！')
+                            if (v.status === 200) {
+                                this.searchResult.data = v.data.books;
+                                if (v.data.books.length == 0) {
+                                    this.$message.info('未找到！')
+                                }
+                                this.pagination.total = v.data['total-count']
+                            } else {
+                                this.$message.error(v.msg)
                             }
-                            this.pagination.total = v.data['total-count']
                         })
                         .catch((err) => {
                             this.searchResult.loading = false; // 关闭加载动画
                             this.searchResult.haveResult = false; // 关闭搜索结果
-                            this.$message.error('搜索失败')
+                            this.$message.error('搜索失败，网络错误')
                         })
                 },
                 currnetPageChange(val) {
@@ -231,11 +239,15 @@
                     axios.get(`/books?${type}=${kw}&page=${val}`)
                         .then((v) => {
                             this.searchResult.loading = false; // 关闭加载动画
+                            if (v.status === 200) {
                             this.searchResult.data = v.data.books;
+                            } else {
+                                this.$message.error(v.msg)
+                            }
                         })
                         .catch((err) => {
                             this.searchResult.loading = false; // 关闭加载动画
-                            this.$message.error('搜索失败')
+                            this.$message.error('搜索失败，网络错误')
                         })
                     this.pagination.currentPage = val;
                 }

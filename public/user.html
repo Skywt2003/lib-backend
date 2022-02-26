@@ -162,15 +162,15 @@
                 <el-form style="width: 50%;" ref="formModifyPassword" :rules="formModifyPasswordRules"
                     label-position="right" label-width="150px" :model="formModifyPassword">
                     <el-form-item label="旧密码：" prop="pwd">
-                        <el-input prefix-icon="el-icon-lock" placeholder="请输入当前密码" v-model="formModifyPassword.pwd">
+                        <el-input type="password" prefix-icon="el-icon-lock" placeholder="请输入当前密码" v-model="formModifyPassword.pwd">
                         </el-input>
                     </el-form-item>
                     <el-form-item label="新密码：" prop="newPwd">
-                        <el-input prefix-icon="el-icon-lock" placeholder="请输入新密码" v-model="formModifyPassword.newPwd">
+                        <el-input type="password" prefix-icon="el-icon-lock" placeholder="请输入新密码" v-model="formModifyPassword.newPwd">
                         </el-input>
                     </el-form-item>
                     <el-form-item label="再次输入新密码：" prop="newPwdAgain">
-                        <el-input prefix-icon="el-icon-lock" placeholder="请再次输入新密码"
+                        <el-input type="password" prefix-icon="el-icon-lock" placeholder="请再次输入新密码"
                             v-model="formModifyPassword.newPwdAgain"></el-input>
                     </el-form-item>
                     <el-form-item>
@@ -268,9 +268,9 @@
                             { type: 'string', max: 10, message: '姓名长度不能超过10个字符', trigger: 'blur' }],
                     },
                     formModifyPassword: {
-                        pwd: '134243asdfasdfd',
-                        newPwd: '134243asdfasdf',
-                        newPwdAgain: '134243asdfasdf'
+                        pwd: '',
+                        newPwd: '',
+                        newPwdAgain: ''
                     },
                     formModifyPasswordRules: {
                         pwd: [
