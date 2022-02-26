@@ -349,20 +349,24 @@ def search_users():
     if (not now_user): return __400_Invalid_token()
     if (now_user.group != 0): return __400_Permission_denied()
 
-    if (not request.json.get('page')): page = 1
+    # 需要考虑如果请求体为空，request.json 将为 None，不会再有 get 成员！！！
+    if (not request.json or not request.json.get('page')): page = 1
     else: page = int(request.json.get('page'))
-    if (not request.json.get('page-size')): page_size = 10
+    if (not request.json or not request.json.get('page-size')): page_size = 10
     else: page_size = int(request.json.get('page-size'))
 
     # 多条件查询，如果遇字段为空则忽略条件
-    got_users = session.query(User).filter(
-        or_(User.name == request.json.get('name'), not request.json.get('name')),
-        or_(User.gender == request.json.get('gender'), not request.json.get('gender')),
-        or_(User.email == request.json.get('email'), not request.json.get('email')),
-        or_(User.stuid == request.json.get('stuId'), not request.json.get('stuId')),
-        or_(User.age == request.json.get('age'), not request.json.get('age')),
-        or_(User.group == request.json.get('group'), not request.json.get('group')),
-    ).all()
+    if (request.json):
+        got_users = session.query(User).filter(
+            or_(User.name == request.json.get('name'), not request.json.get('name')),
+            or_(User.gender == request.json.get('gender'), not request.json.get('gender')),
+            or_(User.email == request.json.get('email'), not request.json.get('email')),
+            or_(User.stuid == request.json.get('stuId'), not request.json.get('stuId')),
+            or_(User.age == request.json.get('age'), not request.json.get('age')),
+            or_(User.group == request.json.get('group'), not request.json.get('group')),
+        ).all()
+    else:
+        got_users = session.query(User).all()
 
     ret_users = []
     total_num = 0
@@ -404,16 +408,19 @@ def search_books():
     now_user = session.query(User).filter_by(id = now_uid).first()
     if (not now_user): return __400_Invalid_token()
 
-    if (not request.json.get('page')): page = 1
+    if (not request.json or not request.json.get('page')): page = 1
     else: page = int(request.json.get('page'))
-    if (not request.json.get('page-size')): page_size = 10
+    if (not request.json or not request.json.get('page-size')): page_size = 10
     else: page_size = int(request.json.get('page-size'))
 
-    got_books = session.query(Book).filter(
-        or_(Book.name == request.json.get('name'), not request.json.get('name')),
-        or_(Book.isbn == request.json.get('isbn'), not request.json.get('isbn')),
-        or_(Book.author == request.json.get('author'), not request.json.get('author')),
-    ).all()
+    if (request.json):
+        got_books = session.query(Book).filter(
+            or_(Book.name == request.json.get('name'), not request.json.get('name')),
+            or_(Book.isbn == request.json.get('isbn'), not request.json.get('isbn')),
+            or_(Book.author == request.json.get('author'), not request.json.get('author')),
+        ).all()
+    else:
+        got_books = session.query(Book).all()
 
     ret_books = []
     total_num = 0
