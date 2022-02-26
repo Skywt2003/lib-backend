@@ -290,7 +290,7 @@ def get_self_info():
     })
 
 # 更改用户信息
-@app.route('/api/users/<got_uid>/info', methods=['POST'])
+@app.route('/api/users/<got_uid>', methods=['PUT'])
 def post_info(got_uid):
     now_token = request.headers.get('token')
 
