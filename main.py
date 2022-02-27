@@ -218,7 +218,9 @@ def add_user():
 
     new_email = request.json.get('userEmail')
     print('user_email = ', new_email)
-    new_passwd = request.json.get('userPwd')
+    # 设置默认密码为 123456
+    # new_passwd = request.json.get('userPwd')
+    new_passwd = '123456'
     if (not check_email(new_email) or not check_pass(new_passwd)):
         return __400_Incorrect_login()
     new_user = User(
@@ -337,6 +339,8 @@ def post_pass(got_uid):
 
     got_user = session.query(User).filter_by(id = got_uid).first()
     got_user.passwd = get_hash(new_pass)
+
+    return __200_OK()
 
 # 查询用户
 @app.route('/api/users', methods=['GET'])
