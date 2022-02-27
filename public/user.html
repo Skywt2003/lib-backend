@@ -104,7 +104,7 @@
                             </template>
                         </el-table-column>
                         <el-table-column prop="rcdReturnDate" label="归还时间">
-                            <template slot-scope="scope">
+                            <template v-if="scope.row.rcdReturned" slot-scope="scope">
                                 {{ scope.row.rcdReturnDate | dateFormat }}
                             </template>
                         </el-table-column>
