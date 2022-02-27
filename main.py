@@ -467,7 +467,15 @@ def add_book():
     )
     session.add(new_book)
     session.commit()
-    return __200_OK()
+    return __200_Return_data({
+        'bookId': new_book.id,
+        'bookName': new_book.name,
+        'bookAuthor': new_book.author,
+        'bookISBN': new_book.isbn,
+        'bookPress': new_book.press,
+        'bookExistingNumber': new_book.existingNum,
+        'bookTotalNumber': new_book.totalNum
+    })
 
 # 删除书籍
 @app.route('/api/books/<got_bid>', methods=['DELETE'])
