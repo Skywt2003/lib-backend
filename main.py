@@ -27,8 +27,8 @@ from datetime import datetime, timedelta
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 
-from sqlalchemy import Column, String, Integer, DateTime, Boolean, create_engine, or_
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy import Column, ForeignKey, String, Integer, DateTime, Boolean, create_engine, or_, and_
+from sqlalchemy.orm import sessionmaker, relationship
 from sqlalchemy.ext.declarative import declarative_base
 
 # --------------
@@ -51,31 +51,33 @@ Base = declarative_base()
 class User(Base):
     __tablename__ = 'lib_users'
     id = Column(Integer, primary_key=True)
-    group = Column(Integer)
-    email = Column(String(255), unique=True)
-    passwd = Column(String(255))
+    group = Column(Integer, nullable=False)
+    email = Column(String(255), nullable=False, unique=True)
+    passwd = Column(String(255), nullable=False)
     stuid = Column(String(20))
     name = Column(String(10))
     gender = Column(Integer)
     age = Column(Integer)
     bio = Column(String(255))
+    records = relationship("Record",backref="user")
 class Book(Base):
     __tablename__ = 'lib_books'
     id = Column(Integer, primary_key=True)
-    name = Column(String(50))
+    name = Column(String(50), nullable=False)
     author = Column(String(20))
-    isbn = Column(String(20), unique=True)
+    isbn = Column(String(20), nullable=False, unique=True)
     press = Column(String(20))
-    existingNum = Column(Integer)
-    totalNum = Column(Integer)
+    existingNum = Column(Integer, nullable=False)
+    totalNum = Column(Integer, nullable=False)
+    records = relationship("Record",backref="book")
 class Record(Base):
     __tablename__ = 'lib_records'
     id = Column(Integer, primary_key=True)
-    userId = Column(Integer)
-    bookId = Column(Integer)
-    borrowDate = Column(DateTime)
+    userId = Column(Integer, ForeignKey('lib_users.id'))
+    bookId = Column(Integer, ForeignKey('lib_books.id'))
+    borrowDate = Column(DateTime, nullable=False)
     returnDate = Column(DateTime)
-    returned = Column(Boolean)
+    returned = Column(Boolean, nullable=False)
 
 # --------------
 # 基础函数部分
@@ -145,6 +147,13 @@ def check_pass(passwd):
 def wash(str):
     if (str == ''): return None
     return str
+
+# Wash 2 用于将 None 转为 Number
+# 参数：需要处理的变量
+# 返回：处理结果
+def wash2(inp):
+    if (inp == None): return 0
+    return inp
 
 # 返回信息和代码的统一定义
 def __400_Incorrect_login():
@@ -602,45 +611,83 @@ def del_record(got_rid):
 def search_records():
     now_token = request.headers.get('token')
 
-    # try: now_uid = decode_token(now_token)
-    # except: return __400_Invalid_token()
-    # now_user = session.query(User).filter_by(id = now_uid).first()
-    # if (not now_user): return __400_Invalid_token()
+    try: now_uid = decode_token(now_token)
+    except: return __400_Invalid_token()
+    now_user = session.query(User).filter_by(id = now_uid).first()
+    if (not now_user): return __400_Invalid_token()
 
-    # if (not request.json.get('page')): page = 1
-    # else: page = int(request.json.get('page'))
-    # if (not request.json.get('page-size')): page_size = 10
-    # else: page_size = int(request.json.get('page-size'))
+    if (not request.args or not request.args.get('page')): page = 1
+    else: page = int(request.args.get('page'))
+    if (not request.args or not request.args.get('page-size')): page_size = 10
+    else: page_size = int(request.args.get('page-size'))
 
-    # got_books = session.query(Book).filter(
-    #     or_(Book.name == request.json.get('name'), not request.json.get('name')),
-    #     or_(Book.isbn == request.json.get('isbn'), not request.json.get('isbn')),
-    #     or_(Book.author == request.json.get('author'), not request.json.get('author')),
-    # ).all()
+    # 目前是全部查出来然后逐一检索，实际上是没有分页查询，估计对于很大的数据量肯定吃不消
+    if (request.args):
+        # 为了处理 Nonetype 的问题，这个地方暂时只能写得非常恶心
+        minBorrowDate = wash2(request.args.get('minBorrowDate')) / 1000
+        maxBorrowDate = wash2(request.args.get('maxBorrowDate')) / 1000
+        minReturnDate = wash2(request.args.get('minReturnDate')) / 1000
+        maxReturnDate = wash2(request.args.get('maxReturnDate')) / 1000
+        got_records = session.query(Record).filter(
+            or_(Record.userId == request.args.get('userId'), not request.args.get('userId')),
+            or_(Record.bookId == request.args.get('bookId'), not request.args.get('bookId')),
+            # or_(Record.book.name == request.args.get('bookName'), not request.args.get('bookName')),
+            # or_(
+            #     session.query(Book).filter(Record.bookId == Book.id).first().name == request.args.get('bookName'),
+            #     not request.args.get('bookName')
+            # ),
+            or_(
+                or_(not minBorrowDate, not maxBorrowDate), 
+                and_(Record.borrowDate >= minBorrowDate, Record.borrowDate <= minBorrowDate)
+            ),
+            or_(
+                or_(not minReturnDate, not maxReturnDate), 
+                and_(Record.borrowDate >= minReturnDate, Record.borrowDate <= maxReturnDate)
+            ),
+            or_(Record.returned == request.args.get('returned'), not request.args.get('returned')),
+        ).all()
+    else:
+        got_records = session.query(Book).all()
 
-    # ret_rcds = []
-    # total_num = 0
-    # for got_book in got_books:
-    #     ret_user = {
-    #         'bookId': got_book.id,
-    #         'bookName': got_book.name,
-    #         'bookISBN': got_book.isbn,
-    #         'bookPress': got_book.press,
-    #         'bookExistingNumber': got_book.existingNum,
-    #         'bookTotalNumber': got_book.totalNum
-    #     }
-    #     total_num = total_num + 1
-    #     if ((page-1) * page_size +1 <= total_num and total_num <= page * page_size): ret_books.append(ret_user)
-    # total_page = math.ceil(total_num / page_size)
+    ret_records = []
+    total_num = 0
+    for got_record in got_records:
+        got_user = got_record.user
+        got_book = got_record.book
+        if (got_record.returnDate): got_returnDate = float(time.mktime(got_record.returnDate.timetuple())) * 1000
+        else: got_returnDate = 0
+        ret_record = {
+            'rcdId': got_record.id,
+            'rcdUserId': got_user.id,
+            'rcdBookId': got_book.id,
+            'rcdBorrowDate': float(time.mktime(got_record.borrowDate.timetuple())) * 1000,
+            'rcdReturnDate': got_returnDate,
+            'rcdReturned': got_record.returned,
+            "bookName": got_book.name,
+            "bookAuthor": got_book.author,
+            "bookISBN": got_book.isbn,
+            "bookPress": got_book.press,
+            "bookExistingNumber": got_book.existingNum,
+            "bookTotalNumber": got_book.totalNum,
+            "userEmail": got_user.email,
+            "userStuId": got_user.stuid,
+            "userName": got_user.name,
+            "userGender": got_user.gender,
+            "userAge": got_user.age,
+            "userBio": got_user.bio,
+            "userGroup": got_user.group
+        }
+        total_num = total_num + 1
+        if ((page-1) * page_size +1 <= total_num and total_num <= page * page_size): ret_records.append(ret_record)
+    total_page = math.ceil(total_num / page_size)
 
-    # return __200_Return_data({
-    #     'page': page,
-    #     'page-size': page_size,
-    #     'total-count': total_num,
-    #     'total-page': total_page,
-    #     'books': ret_books
-    # })
-
+    return __200_Return_data({
+        'page': page,
+        'page-size': page_size,
+        'total-count': total_num,
+        'total-page': total_page,
+        'records': ret_records
+    })
 
 if __name__ == '__main__':
     app.run(
