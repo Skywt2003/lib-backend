@@ -15,15 +15,15 @@
 <body>
     <div class="app" v-cloak>
         <div class="header">
-            <div class="logo">
+            <div class="logo" style="display: flex; align-items: center;">
+                <img src="./img/logo.png" style="width: 40px; margin-right: 10px;" alt="">
                 <h1>易千图书馆</h1>
             </div>
             <div class="login">
                 <el-dropdown @command="dropdown" v-if="userInfo.logined">
-                    <a class="userInfo" href="/user.html">
+                    <a class="userInfo" href="/user.html" class="user-avatar">
                         <span style="margin-right: 10px;">{{userInfo.username}}</span>
-                        <el-avatar size="medium"
-                            src="https://cube.elemecdn.com/3/7c/3ea6beec64369c2642b92c6726f1epng.png"></el-avatar>
+                        <span style="width: 40px; height: 40px;" v-html="multiavatar(userInfo.userId)"></span>
                     </a>
                     <el-dropdown-menu slot="dropdown">
                         <el-dropdown-item v-if="userInfo.userGroup === 0" command="admin">管理面板</el-dropdown-item>
@@ -36,7 +36,7 @@
         </div>
         <div class="search">
             <transition name="el-fade-in-linear">
-                <img v-show="!searchResult.haveResult" src="./img/title-logo.png" class="title-logo" alt="">
+                <img v-show="!searchResult.haveResult" src="./img/title-img.png" class="title-logo" alt="">
             </transition>
 
             <el-form :style="{paddingTop: !searchResult.haveResult * 350 + 'px'}" :inline="true" :model="formSearch">
@@ -98,6 +98,7 @@
 
     <script src="./js/requestConfig.js"></script>
     <script src="./js/loginInfo.js"></script>
+    <script src="./js/multiavatar.js"></script>
     <script>
         new Vue({
             el: '.app',
@@ -106,7 +107,8 @@
                     userInfo: {
                         logined: false,
                         username: '',
-                        userGroup: 1
+                        userGroup: 1,
+                        userId: 0,
                     },
                     searchResult: {
                         currentKw: '',
@@ -132,14 +134,16 @@
                     this.userInfo.logined = true
                     this.userInfo.username = loginInfo.user.userName
                     this.userInfo.userGroup = loginInfo.user.userGroup
+                    this.userInfo.userId = loginInfo.user.userId
                 }
             },
             methods: {
-                borrow(index, rcdBookID) {
+                multiavatar,
+                borrow(index, rcdBookId) {
                     if (loginInfo.isLogin()) {
                         axios.post('/records', {
-                            rcdBookID,
-                            rcdUserID: loginInfo.user.userId,
+                            rcdBookId,
+                            rcdUserId: loginInfo.user.userId,
                             rcdBorrowDate: Date.now()
                         },
                             {
@@ -211,7 +215,7 @@
 
                     axios.get(`/books?${type}=${kw}`, {
                         headers: {
-                            'token': getToken()
+                            'token': loginInfo.getToken()
                         }
                     })
                         .then((v) => {

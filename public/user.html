@@ -15,14 +15,22 @@
 <body>
     <div class="app">
         <div class="header">
-            <div class="logo">
-                <h1><a href="/index.html">易千图书馆</a> <span class="t-small">个人中心</span></h1>
+            <div class="logo" style="display: flex; align-items: center;">
+                <a href="/index.html" style="display: flex; align-items: center;">
+                    <img src="./img/logo.png" style="width: 40px; margin-right: 10px;" alt="">
+                </a>
+                <h1>
+                    <a href="/index.html">易千图书馆</a> <span class="t-small">个人中心</span>
+                </h1>
             </div>
         </div>
         <div class="avatar">
             <div class="info">
-                <el-avatar :size="80" src="https://cube.elemecdn.com/3/7c/3ea6beec64369c2642b92c6726f1epng.png">
-                </el-avatar>
+                <span style="width: 80px; height: 80px;" v-html="multiavatar(userInfo.userId)">
+                    
+                </span>
+                <!-- <el-avatar :size="80" src="https://cube.elemecdn.com/3/7c/3ea6beec64369c2642b92c6726f1epng.png">
+                </el-avatar> -->
                 <h2>{{userInfo.username}}
                     <i v-if="userInfo.gender === 1" class="male el-icon-male"></i>
                     <i v-else-if="userInfo.gender === 2" class="female el-icon-female"></i>
@@ -162,11 +170,13 @@
                 <el-form style="width: 50%;" ref="formModifyPassword" :rules="formModifyPasswordRules"
                     label-position="right" label-width="150px" :model="formModifyPassword">
                     <el-form-item label="旧密码：" prop="pwd">
-                        <el-input type="password" prefix-icon="el-icon-lock" placeholder="请输入当前密码" v-model="formModifyPassword.pwd">
+                        <el-input type="password" prefix-icon="el-icon-lock" placeholder="请输入当前密码"
+                            v-model="formModifyPassword.pwd">
                         </el-input>
                     </el-form-item>
                     <el-form-item label="新密码：" prop="newPwd">
-                        <el-input type="password" prefix-icon="el-icon-lock" placeholder="请输入新密码" v-model="formModifyPassword.newPwd">
+                        <el-input type="password" prefix-icon="el-icon-lock" placeholder="请输入新密码"
+                            v-model="formModifyPassword.newPwd">
                         </el-input>
                     </el-form-item>
                     <el-form-item label="再次输入新密码：" prop="newPwdAgain">
@@ -197,6 +207,7 @@
 
     <script src="./js/requestConfig.js"></script>
     <script src="./js/loginInfo.js"></script>
+    <script src="./js/multiavatar.js"></script>
     <script>
         new Vue({
             el: '.app',
@@ -228,7 +239,8 @@
                 return {
                     userInfo: {
                         username: '',
-                        gender: 0
+                        gender: 0,
+                        userId: 0
                     },
                     formSearch: {
                         type: "bookName",
@@ -317,6 +329,7 @@
                 if (loginInfo.isLogin()) {
                     this.userInfo.username = loginInfo.user.userName
                     this.userInfo.gender = loginInfo.user.userGender
+                    this.userInfo.userId = loginInfo.user.userId
 
                     this.formUserInfo = {
                         email: loginInfo.user.userEmail,
@@ -339,6 +352,7 @@
                 }
             },
             methods: {
+                multiavatar,
                 onRemoveSelf() {
                     this.$confirm('注销账号后无法恢复，确定要注销吗？', '提示', {
                         confirmButtonText: '确定',

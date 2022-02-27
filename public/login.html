@@ -16,7 +16,10 @@
     <div class="app">
         <el-card class="box-card">
             <div slot="header">
-                <span>易千图书馆</span>
+                <a href="/index.html" style="width: 120px;display: flex; justify-content: space-between; align-items: center;">
+                    <img src="./img/logo.png" style="width: 30px;" alt="">
+                    <span>易千图书馆</span>
+                </a>
             </div>
             <el-tabs v-model="activeName">
                 <el-tab-pane label="登录" name="login">
@@ -48,7 +51,8 @@
                             </el-input>
                         </el-form-item>
                         <el-form-item label="学号" prop="stuId">
-                            <el-input placeholder="请输入学号" prefix-icon="el-icon-reading" v-model.number="formRegist.stuId">
+                            <el-input placeholder="请输入学号" prefix-icon="el-icon-reading"
+                                v-model.number="formRegist.stuId">
                             </el-input>
                         </el-form-item>
                         <el-form-item label="姓名" prop="username">

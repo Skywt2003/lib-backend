@@ -44,7 +44,7 @@ var loginInfo = {
     }
 }
 
-localStorage.setItem('token', '123')
+// localStorage.setItem('token', '123')
 // localStorage.removeItem('token')
 
 

@@ -8,16 +8,22 @@
 }
 
 .header {
-    height: 40px;
+    height: 50px;
     line-height: 40px;
     display: flex;
     justify-content: space-between;
+    align-items: center;
 }
 
 .header h1 {
     font-size: 20px;
     color: #409eff;
     cursor: default;
+}
+
+.login .user-avatar {
+    display: flex;
+    align-items: center;
 }
 
 .login .userInfo {
