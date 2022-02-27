@@ -429,6 +429,7 @@ def search_books():
         ret_user = {
             'bookId': got_book.id,
             'bookName': got_book.name,
+            'bookAuthor': got_book.author,
             'bookISBN': got_book.isbn,
             'bookPress': got_book.press,
             'bookExistingNumber': got_book.existingNum,
