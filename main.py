@@ -319,7 +319,7 @@ def post_info(got_uid):
     return __200_OK()
 
 # 更改用户密码
-@app.route('/api/users/<got_uid>/pass', methods=['POST'])
+@app.route('/api/users/<got_uid>/password', methods=['PUT'])
 def post_pass(got_uid):
     now_token = request.headers.get('token')
 
