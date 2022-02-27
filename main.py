@@ -537,13 +537,14 @@ def borrow_book():
     now_user = session.query(User).filter_by(id = now_uid).first()
     if (not now_user): return __400_Invalid_token()
     # 普通用户只能以自己的名义借书
-    if (now_user.group != 0 and now_user.id != request.json.get('userId')): return __400_Permission_denied()
+    if (now_user.group != 0 and now_user.id != request.json.get('rcdUserId')): return __400_Permission_denied()
 
-    now_book = session.query(Book).filter_by(id = request.json.get('bookId')).first()
+    now_book = session.query(Book).filter_by(id = request.json.get('rcdBookId')).first()
     if (not now_book): return __400_No_such_book()
 
-    borrow_date = request.json.get('rcdBorrowDate')
-    if (not borrow_date): borrow_date = datetime.now()
+    # 13 位 Unix 时间戳要先转为 float
+    borrow_date = datetime.fromtimestamp(int(request.json.get('rcdBorrowDate')) / 1000)
+    if (not request.json.get('rcdBorrowDate')): borrow_date = datetime.now()
 
     new_record = Record(
         bookId = now_book.id,
@@ -564,8 +565,8 @@ def return_book(got_rid):
     now_user = session.query(User).filter_by(id = now_uid).first()
     if (not now_user): return __400_Invalid_token()
 
-    return_date = request.json.get('rcdReturnDate')
-    if (not return_date): return_date = datetime.now()
+    return_date = datetime.fromtimestamp(int(request.json.get('rcdReturnDate')) / 1000)
+    if (not request.json.get('rcdReturnDate')): return_date = datetime.now()
     now_record = session.query(Record).filter_by(id = got_rid).first()
     if (not now_record): return __400_No_such_record()
 
