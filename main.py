@@ -627,10 +627,10 @@ def search_records():
     # 目前是全部查出来然后逐一检索，实际上是没有分页查询，估计对于很大的数据量肯定吃不消
     if (request.args):
         # 为了处理 Nonetype 的问题，这个地方暂时只能写得非常恶心
-        minBorrowDate = None2num(request.args.get('minBorrowDate')) / 1000
-        maxBorrowDate = None2num(request.args.get('maxBorrowDate')) / 1000
-        minReturnDate = None2num(request.args.get('minReturnDate')) / 1000
-        maxReturnDate = None2num(request.args.get('maxReturnDate')) / 1000
+        minBorrowDate = datetime.fromtimestamp(int(None2num(request.args.get('minBorrowDate'))) / 1000)
+        maxBorrowDate = datetime.fromtimestamp(int(None2num(request.args.get('maxBorrowDate'))) / 1000)
+        minReturnDate = datetime.fromtimestamp(int(None2num(request.args.get('minReturnDate'))) / 1000)
+        maxReturnDate = datetime.fromtimestamp(int(None2num(request.args.get('maxReturnDate'))) / 1000)
         got_records = session.query(Record).filter(
             or_(Record.userId == request.args.get('userId'), not request.args.get('userId')),
             or_(Record.bookId == request.args.get('bookId'), not request.args.get('bookId')),
@@ -640,11 +640,11 @@ def search_records():
             #     not request.args.get('bookName')
             # ),
             or_(
-                or_(not minBorrowDate, not maxBorrowDate), 
-                and_(Record.borrowDate >= minBorrowDate, Record.borrowDate <= minBorrowDate)
+                or_(not request.args.get('minBorrowDate'), not request.args.get('maxBorrowDate')), 
+                and_(Record.borrowDate >= minBorrowDate, Record.borrowDate <= maxBorrowDate)
             ),
             or_(
-                or_(not minReturnDate, not maxReturnDate), 
+                or_(not request.args.get('minReturnDate'), not request.args.get('maxReturnDate')), 
                 and_(Record.borrowDate >= minReturnDate, Record.borrowDate <= maxReturnDate)
             ),
             or_(Record.returned == request.args.get('returned'), not request.args.get('returned')),
