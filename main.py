@@ -385,7 +385,7 @@ def search_users():
         got_filter = session.query(User)
     
     offset_data = page_size * (page - 1)
-    got_users = got_filter.got_filter.offset(offset_data).limit(page_size).all()
+    got_users = got_filter.offset(offset_data).limit(page_size).all()
     total_num = got_filter.count()
     total_page = math.ceil(total_num / page_size)
 
@@ -441,7 +441,7 @@ def search_books():
         got_filter = session.query(Book).all()
 
     offset_data = page_size * (page - 1)
-    got_books = got_filter.got_filter.offset(offset_data).limit(page_size).all()
+    got_books = got_filter.offset(offset_data).limit(page_size).all()
     total_num = got_filter.count()
     total_page = math.ceil(total_num / page_size)
 
