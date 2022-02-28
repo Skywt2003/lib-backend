@@ -151,8 +151,11 @@ def wash(str):
 # Wash 2 用于将 None 转为 Number
 # 参数：需要处理的变量
 # 返回：处理结果
-def wash2(inp):
+def None2num(inp):
     if (inp == None): return 0
+    return inp
+def None2str(inp):
+    if (inp == None): return ''
     return inp
 
 # 返回信息和代码的统一定义
@@ -371,10 +374,10 @@ def search_users():
     # 多条件查询，如果遇字段为空则忽略条件
     if (request.json):
         got_users = session.query(User).filter(
-            or_(User.name.like('%' + request.json.get('name') + '%'), not request.json.get('name')),
+            or_(User.name.like('%' + None2str(request.json.get('name')) + '%'), not request.json.get('name')),
             or_(User.gender == request.json.get('gender'), not request.json.get('gender')),
-            or_(User.email.like('%' + request.json.get('email') + '%'), not request.json.get('email')),
-            or_(User.stuid.like('%' + request.json.get('stuId') + '%'), not request.json.get('stuId')),
+            or_(User.email.like('%' + None2str(request.json.get('email')) + '%'), not request.json.get('email')),
+            or_(User.stuid.like('%' + None2str(request.json.get('stuId')) + '%'), not request.json.get('stuId')),
             or_(User.age == request.json.get('age'), not request.json.get('age')),
             or_(User.group == request.json.get('group'), not request.json.get('group')),
         ).all()
@@ -421,17 +424,17 @@ def search_books():
     now_user = session.query(User).filter_by(id = now_uid).first()
     if (not now_user): return __400_Invalid_token()
 
-    if (not request.json or not request.json.get('page')): page = 1
-    else: page = int(request.json.get('page'))
-    if (not request.json or not request.json.get('page-size')): page_size = 10
-    else: page_size = int(request.json.get('page-size'))
+    if (not request.args or not request.args.get('page')): page = 1
+    else: page = int(request.args.get('page'))
+    if (not request.args or not request.args.get('page-size')): page_size = 10
+    else: page_size = int(request.args.get('page-size'))
 
     # 模糊查询的支持
-    if (request.json):
+    if (request.args):
         got_books = session.query(Book).filter(
-            or_(Book.name.like('%' + request.json.get('name') + '%'), not request.json.get('name')),
-            or_(Book.isbn == request.json.get('isbn'), not request.json.get('isbn')),
-            or_(Book.author.like('%' + request.json.get('author') + '%'), not request.json.get('author')),
+            or_(Book.name.like('%' + None2str(request.args.get('name')) + '%'), not request.args.get('name')),
+            or_(Book.isbn == None2str(request.args.get('isbn')), not request.args.get('isbn')),
+            or_(Book.author.like('%' + None2str(request.args.get('author')) + '%'), not request.args.get('author')),
         ).all()
     else:
         got_books = session.query(Book).all()
@@ -624,10 +627,10 @@ def search_records():
     # 目前是全部查出来然后逐一检索，实际上是没有分页查询，估计对于很大的数据量肯定吃不消
     if (request.args):
         # 为了处理 Nonetype 的问题，这个地方暂时只能写得非常恶心
-        minBorrowDate = wash2(request.args.get('minBorrowDate')) / 1000
-        maxBorrowDate = wash2(request.args.get('maxBorrowDate')) / 1000
-        minReturnDate = wash2(request.args.get('minReturnDate')) / 1000
-        maxReturnDate = wash2(request.args.get('maxReturnDate')) / 1000
+        minBorrowDate = None2num(request.args.get('minBorrowDate')) / 1000
+        maxBorrowDate = None2num(request.args.get('maxBorrowDate')) / 1000
+        minReturnDate = None2num(request.args.get('minReturnDate')) / 1000
+        maxReturnDate = None2num(request.args.get('maxReturnDate')) / 1000
         got_records = session.query(Record).filter(
             or_(Record.userId == request.args.get('userId'), not request.args.get('userId')),
             or_(Record.bookId == request.args.get('bookId'), not request.args.get('bookId')),
