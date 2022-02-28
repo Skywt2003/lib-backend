@@ -159,24 +159,24 @@ def None2str(inp):
     return inp
 
 # 返回信息和代码的统一定义
-def __400_Incorrect_login():
+def __401_Incorrect_login():
     return jsonify({'status': 401, 'data': {}, 'msg': 'Invalid email or password. '}), 200
-def __400_Permission_denied():
+def __401_Permission_denied():
     return jsonify({'status': 401, 'data': {}, 'msg': 'Permission denied. '}), 200
-def __400_Invalid_token():
+def __401_Invalid_token():
     return jsonify({'status': 401, 'data': {}, 'msg': 'Invalid token. '}), 200
-def __400_Books_not_returned():
+def __401_Books_not_returned():
     return jsonify({'status': 401, 'data': {}, 'msg': 'Books not returned. '}), 200
-def __400_User_disabled():
+def __401_User_disabled():
     return jsonify({'status': 401, 'data': {}, 'msg': 'The user is disabled. '}), 200
-def __400_No_such_user():
+def __401_No_such_user():
     return jsonify({'status': 401, 'data': {}, 'msg': 'No such user. '}), 200
 
-def __400_No_such_book():
-    return jsonify({'status': 400, 'data': {}, 'msg': 'No such book. '}), 200
+def __401_No_such_book():
+    return jsonify({'status': 401, 'data': {}, 'msg': 'No such book. '}), 200
 
-def __400_No_such_record():
-    return jsonify({'status': 400, 'data': {}, 'msg': 'No such record. '}), 200
+def __401_No_such_record():
+    return jsonify({'status': 401, 'data': {}, 'msg': 'No such record. '}), 200
 
 def __200_OK():
     return jsonify({'status': 200, 'data': {}, 'msg': 'OK'}), 200
@@ -223,9 +223,9 @@ def add_user():
     new_group = request.json.get('userGroup')
     if (new_group and new_group != 1):
         try: now_uid = decode_token(now_token)
-        except: return __400_Invalid_token()
+        except: return __401_Invalid_token()
         now_user = session.query(User).filter_by(id = now_uid).first()
-        if (not now_user or now_user.group != 0): return __400_Permission_denied()
+        if (not now_user or now_user.group != 0): return __401_Permission_denied()
     else: new_group = 1
 
     new_email = request.json.get('userEmail')
@@ -234,7 +234,7 @@ def add_user():
     # new_passwd = request.json.get('userPwd')
     new_passwd = '123456'
     if (not check_email(new_email) or not check_pass(new_passwd)):
-        return __400_Incorrect_login()
+        return __401_Incorrect_login()
     new_user = User(
         email = new_email,
         passwd = get_hash(new_passwd),
@@ -255,17 +255,17 @@ def del_user(got_uid):
     now_token = request.headers.get('token')
 
     try: now_uid = decode_token(now_token)
-    except: return __400_Invalid_token()
+    except: return __401_Invalid_token()
     now_user = session.query(User).filter_by(id = now_uid).first()
     if (now_user.group != 0):
-        if (now_user.id != got_uid): return __400_Permission_denied()
+        if (now_user.id != got_uid): return __401_Permission_denied()
 
     # 检测是否归还了所有书籍
     not_returned = session.query(Book).filter_by(userId = now_uid, returned = False).all()
-    if (not_returned): return __400_Books_not_returned()
+    if (not_returned): return __401_Books_not_returned()
 
     got_user = session.query(User).filter_by(id = got_uid).first()
-    if (not got_user): return __400_No_such_user()
+    if (not got_user): return __401_No_such_user()
     session.delete(got_user)
     session.commit()
     return __200_OK()
@@ -277,9 +277,9 @@ def login():
     now_pass = request.json.get('userPwd')
 
     now_user = session.query(User).filter_by(email = now_email).first()
-    if (not now_user): return __400_Incorrect_login()
-    if (now_user.group == 2): return __400_User_disabled()
-    if (not auth(now_user.id, now_pass)): return __400_Incorrect_login()
+    if (not now_user): return __401_Incorrect_login()
+    if (now_user.group == 2): return __401_User_disabled()
+    if (not auth(now_user.id, now_pass)): return __401_Incorrect_login()
     return __200_Return_data({'token': get_token(now_user.id)})
 
 # 获取当前用户（自己）的信息（已测试）
@@ -288,9 +288,9 @@ def get_self_info():
     now_token = request.headers.get('token')
 
     try: now_uid = decode_token(now_token)
-    except: return __400_Invalid_token()
+    except: return __401_Invalid_token()
     now_user = session.query(User).filter_by(id = now_uid).first()
-    if (not now_user): return __400_Invalid_token()
+    if (not now_user): return __401_Invalid_token()
 
     return __200_Return_data({
         "userId": now_user.id,
@@ -309,10 +309,10 @@ def post_info(got_uid):
     now_token = request.headers.get('token')
 
     try: now_uid = decode_token(now_token)
-    except: return __400_Invalid_token()
+    except: return __401_Invalid_token()
     now_user = session.query(User).filter_by(id = now_uid).first()
-    if (not now_user): return __400_Invalid_token()
-    if (now_user.group != 0): return __400_Permission_denied()
+    if (not now_user): return __401_Invalid_token()
+    if (now_user.group != 0): return __401_Permission_denied()
 
     new_group = request.json.get('userGroup')
     new_stuid = request.json.get('userStuId')
@@ -338,16 +338,16 @@ def post_pass(got_uid):
     now_token = request.headers.get('token')
 
     try: now_uid = decode_token(now_token)
-    except: return __400_Invalid_token()
+    except: return __401_Invalid_token()
     now_user = session.query(User).filter_by(id = now_uid).first()
-    if (not now_user): return __400_Invalid_token()
+    if (not now_user): return __401_Invalid_token()
 
     new_pass = request.json.get('userNewPwd')
     old_pass = request.json.get('userPwd')
 
     if (now_user.group != 0):
-        if (now_user.id != got_uid): return __400_Permission_denied()
-        if (get_hash(old_pass) != now_user.passwd): return __400_Incorrect_login()
+        if (now_user.id != got_uid): return __401_Permission_denied()
+        if (get_hash(old_pass) != now_user.passwd): return __401_Incorrect_login()
 
     got_user = session.query(User).filter_by(id = got_uid).first()
     got_user.passwd = get_hash(new_pass)
@@ -360,10 +360,10 @@ def search_users():
     now_token = request.headers.get('token')
 
     try: now_uid = decode_token(now_token)
-    except: return __400_Invalid_token()
+    except: return __401_Invalid_token()
     now_user = session.query(User).filter_by(id = now_uid).first()
-    if (not now_user): return __400_Invalid_token()
-    if (now_user.group != 0): return __400_Permission_denied()
+    if (not now_user): return __401_Invalid_token()
+    if (now_user.group != 0): return __401_Permission_denied()
 
     # 需要考虑如果请求体为空，request.json 将为 None，不会再有 get 成员！！！
     if (not request.json or not request.json.get('page')): page = 1
@@ -421,9 +421,9 @@ def search_books():
     now_token = request.headers.get('token')
 
     try: now_uid = decode_token(now_token)
-    except: return __400_Invalid_token()
+    except: return __401_Invalid_token()
     now_user = session.query(User).filter_by(id = now_uid).first()
-    if (not now_user): return __400_Invalid_token()
+    if (not now_user): return __401_Invalid_token()
 
     if (not request.args or not request.args.get('page')): page = 1
     else: page = int(request.args.get('page'))
@@ -471,10 +471,10 @@ def add_book():
     now_token = request.headers.get('token')
 
     try: now_uid = decode_token(now_token)
-    except: return __400_Invalid_token()
+    except: return __401_Invalid_token()
     now_user = session.query(User).filter_by(id = now_uid).first()
-    if (not now_user): return __400_Invalid_token()
-    if (now_user.group != 0): return __400_Permission_denied()
+    if (not now_user): return __401_Invalid_token()
+    if (now_user.group != 0): return __401_Permission_denied()
 
     new_book = Book(
         name = request.json.get('bookName'),
@@ -502,12 +502,12 @@ def del_book(got_bid):
     now_token = request.headers.get('token')
 
     try: now_uid = decode_token(now_token)
-    except: return __400_Invalid_token()
+    except: return __401_Invalid_token()
     now_user = session.query(User).filter_by(id = now_uid).first()
-    if (not now_user or now_user.group != 0): return __400_Invalid_token()
+    if (not now_user or now_user.group != 0): return __401_Invalid_token()
 
     got_book = session.query(Book).filter_by(id = got_bid).first()
-    if (not got_book): return __400_No_such_book()
+    if (not got_book): return __401_No_such_book()
     session.delete(got_book)
     session.commit()
     return __200_OK()
@@ -524,13 +524,13 @@ def change_book_info(got_bid):
 
     now_token = request.headers.get('token')
     try: now_uid = decode_token(now_token)
-    except: return __400_Invalid_token()
+    except: return __401_Invalid_token()
     now_user = session.query(User).filter_by(id = now_uid).first()
-    if (not now_user): return __400_Invalid_token()
-    if (now_user.group != 0): return __400_Permission_denied()
+    if (not now_user): return __401_Invalid_token()
+    if (now_user.group != 0): return __401_Permission_denied()
 
     got_book = session.query(Book).filter_by(id = got_bid).first()
-    if (not got_book): return __400_No_such_book()
+    if (not got_book): return __401_No_such_book()
     if (new_name): got_book.name = new_name
     if (new_author): got_book.author = new_author
     if (new_isbn): got_book.isbn = new_isbn
@@ -551,14 +551,14 @@ def change_book_info(got_bid):
 def borrow_book():
     now_token = request.headers.get('token')
     try: now_uid = decode_token(now_token)
-    except: return __400_Invalid_token()
+    except: return __401_Invalid_token()
     now_user = session.query(User).filter_by(id = now_uid).first()
-    if (not now_user): return __400_Invalid_token()
+    if (not now_user): return __401_Invalid_token()
     # 普通用户只能以自己的名义借书
-    if (now_user.group != 0 and now_user.id != request.json.get('rcdUserId')): return __400_Permission_denied()
+    if (now_user.group != 0 and now_user.id != request.json.get('rcdUserId')): return __401_Permission_denied()
 
     now_book = session.query(Book).filter_by(id = request.json.get('rcdBookId')).first()
-    if (not now_book): return __400_No_such_book()
+    if (not now_book): return __401_No_such_book()
 
     # 13 位 Unix 时间戳要先转为 float
     borrow_date = datetime.fromtimestamp(int(request.json.get('rcdBorrowDate')) / 1000)
@@ -579,14 +579,14 @@ def borrow_book():
 def return_book(got_rid):
     now_token = request.headers.get('token')
     try: now_uid = decode_token(now_token)
-    except: return __400_Invalid_token()
+    except: return __401_Invalid_token()
     now_user = session.query(User).filter_by(id = now_uid).first()
-    if (not now_user): return __400_Invalid_token()
+    if (not now_user): return __401_Invalid_token()
 
     return_date = datetime.fromtimestamp(int(request.json.get('rcdReturnDate')) / 1000)
     if (not request.json.get('rcdReturnDate')): return_date = datetime.now()
     now_record = session.query(Record).filter_by(id = got_rid).first()
-    if (not now_record): return __400_No_such_record()
+    if (not now_record): return __401_No_such_record()
 
     now_record.returned = True
     now_record.returnDate = return_date
@@ -599,13 +599,13 @@ def return_book(got_rid):
 def del_record(got_rid):
     now_token = request.headers.get('token')
     try: now_uid = decode_token(now_token)
-    except: return __400_Invalid_token()
+    except: return __401_Invalid_token()
     now_user = session.query(User).filter_by(id = now_uid).first()
-    if (not now_user): return __400_Invalid_token()
-    if (now_user.group != 0): return __400_Permission_denied()
+    if (not now_user): return __401_Invalid_token()
+    if (now_user.group != 0): return __401_Permission_denied()
 
     now_record = session.query(Record).filter_by(id = got_rid).first()
-    if (not now_record): return __400_No_such_record()
+    if (not now_record): return __401_No_such_record()
 
     session.delete(now_record)
     session.commit()
@@ -617,9 +617,9 @@ def search_records():
     now_token = request.headers.get('token')
 
     try: now_uid = decode_token(now_token)
-    except: return __400_Invalid_token()
+    except: return __401_Invalid_token()
     now_user = session.query(User).filter_by(id = now_uid).first()
-    if (not now_user): return __400_Invalid_token()
+    if (not now_user): return __401_Invalid_token()
 
     if (not request.args or not request.args.get('page')): page = 1
     else: page = int(request.args.get('page'))
