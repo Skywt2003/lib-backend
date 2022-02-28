@@ -373,21 +373,25 @@ def search_users():
 
     # 多条件查询，如果遇字段为空则忽略条件
     if (request.json):
-        got_users = session.query(User).filter(
+        got_filter = session.query(User).filter(
             or_(User.name.like('%' + None2str(request.json.get('name')) + '%'), not request.json.get('name')),
             or_(User.gender == request.json.get('gender'), not request.json.get('gender')),
             or_(User.email.like('%' + None2str(request.json.get('email')) + '%'), not request.json.get('email')),
             or_(User.stuid.like('%' + None2str(request.json.get('stuId')) + '%'), not request.json.get('stuId')),
             or_(User.age == request.json.get('age'), not request.json.get('age')),
             or_(User.group == request.json.get('group'), not request.json.get('group')),
-        ).all()
+        )
     else:
-        got_users = session.query(User).all()
+        got_filter = session.query(User)
+    
+    offset_data = page_size * (page - 1)
+    got_users = got_filter.got_filter.offset(offset_data).limit(page_size).all()
+    total_num = got_filter.count()
+    total_page = math.ceil(total_num / page_size)
 
     ret_users = []
-    total_num = 0
     for got_user in got_users:
-        ret_user = {
+        ret_users.append({
             'userId': got_user.id,
             'userEmail': got_user.email,
             'userStuId': got_user.stuid,
@@ -396,10 +400,7 @@ def search_users():
             'userAge': got_user.age,
             'userBio': got_user.bio,
             'userGroup': got_user.group
-        }
-        total_num = total_num + 1
-        if ((page-1) * page_size +1 <= total_num and total_num <= page * page_size): ret_users.append(ret_user)
-    total_page = math.ceil(total_num / page_size)
+        })
 
     return __200_Return_data({
         'page': page,
@@ -431,18 +432,22 @@ def search_books():
 
     # 模糊查询的支持
     if (request.args):
-        got_books = session.query(Book).filter(
+        got_filter = session.query(Book).filter(
             or_(Book.name.like('%' + None2str(request.args.get('name')) + '%'), not request.args.get('name')),
             or_(Book.isbn == None2str(request.args.get('isbn')), not request.args.get('isbn')),
             or_(Book.author.like('%' + None2str(request.args.get('author')) + '%'), not request.args.get('author')),
-        ).all()
+        )
     else:
-        got_books = session.query(Book).all()
+        got_filter = session.query(Book).all()
+
+    offset_data = page_size * (page - 1)
+    got_books = got_filter.got_filter.offset(offset_data).limit(page_size).all()
+    total_num = got_filter.count()
+    total_page = math.ceil(total_num / page_size)
 
     ret_books = []
-    total_num = 0
     for got_book in got_books:
-        ret_user = {
+        ret_books.append({
             'bookId': got_book.id,
             'bookName': got_book.name,
             'bookAuthor': got_book.author,
@@ -450,10 +455,7 @@ def search_books():
             'bookPress': got_book.press,
             'bookExistingNumber': got_book.existingNum,
             'bookTotalNumber': got_book.totalNum
-        }
-        total_num = total_num + 1
-        if ((page-1) * page_size +1 <= total_num and total_num <= page * page_size): ret_books.append(ret_user)
-    total_page = math.ceil(total_num / page_size)
+        })
 
     return __200_Return_data({
         'page': page,
@@ -624,14 +626,13 @@ def search_records():
     if (not request.args or not request.args.get('page-size')): page_size = 10
     else: page_size = int(request.args.get('page-size'))
 
-    # 目前是全部查出来然后逐一检索，实际上是没有分页查询，估计对于很大的数据量肯定吃不消
     if (request.args):
         # 为了处理 Nonetype 的问题，这个地方暂时只能写得非常恶心
         minBorrowDate = datetime.fromtimestamp(int(None2num(request.args.get('minBorrowDate'))) / 1000)
         maxBorrowDate = datetime.fromtimestamp(int(None2num(request.args.get('maxBorrowDate'))) / 1000)
         minReturnDate = datetime.fromtimestamp(int(None2num(request.args.get('minReturnDate'))) / 1000)
         maxReturnDate = datetime.fromtimestamp(int(None2num(request.args.get('maxReturnDate'))) / 1000)
-        got_records = session.query(Record).filter(
+        got_filter = session.query(Record).filter(
             or_(Record.userId == request.args.get('userId'), not request.args.get('userId')),
             or_(Record.bookId == request.args.get('bookId'), not request.args.get('bookId')),
             # or_(Record.book.name == request.args.get('bookName'), not request.args.get('bookName')),
@@ -648,18 +649,22 @@ def search_records():
                 and_(Record.borrowDate >= minReturnDate, Record.borrowDate <= maxReturnDate)
             ),
             or_(Record.returned == request.args.get('returned'), not request.args.get('returned')),
-        ).all()
+        )
     else:
-        got_records = session.query(Book).all()
+        got_filter = session.query(Book)
+
+    offset_data = page_size * (page - 1)
+    got_records = got_filter.offset(offset_data).limit(page_size).all()
+    total_num = got_filter.count()
+    total_page = math.ceil(total_num / page_size)
 
     ret_records = []
-    total_num = 0
     for got_record in got_records:
         got_user = got_record.user
         got_book = got_record.book
         if (got_record.returnDate): got_returnDate = float(time.mktime(got_record.returnDate.timetuple())) * 1000
         else: got_returnDate = 0
-        ret_record = {
+        ret_records.append({
             'rcdId': got_record.id,
             'rcdUserId': got_user.id,
             'rcdBookId': got_book.id,
@@ -679,10 +684,7 @@ def search_records():
             "userAge": got_user.age,
             "userBio": got_user.bio,
             "userGroup": got_user.group
-        }
-        total_num = total_num + 1
-        if ((page-1) * page_size +1 <= total_num and total_num <= page * page_size): ret_records.append(ret_record)
-    total_page = math.ceil(total_num / page_size)
+        })
 
     return __200_Return_data({
         'page': page,
