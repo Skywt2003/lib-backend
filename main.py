@@ -174,6 +174,10 @@ def __401_No_such_user():
 
 def __401_No_such_book():
     return jsonify({'status': 401, 'data': {}, 'msg': 'No such book. '}), 200
+def __401_Book_not_enough():
+    return jsonify({'status': 401, 'data': {}, 'msg': 'Book not enough. '}), 200
+def __401_Too_many_books():
+    return jsonify({'status': 401, 'data': {}, 'msg': 'Too many books. '}), 200
 
 def __401_No_such_record():
     return jsonify({'status': 401, 'data': {}, 'msg': 'No such record. '}), 200
@@ -560,6 +564,7 @@ def borrow_book():
     now_token = request.headers.get('token')
     try: now_uid = decode_token(now_token)
     except: return __401_Invalid_token()
+
     now_user = session.query(User).filter_by(id = now_uid).first()
     if (not now_user): return __401_Invalid_token()
     # 普通用户只能以自己的名义借书
@@ -567,6 +572,11 @@ def borrow_book():
 
     now_book = session.query(Book).filter_by(id = request.json.get('rcdBookId')).first()
     if (not now_book): return __401_No_such_book()
+
+    if (now_book.existingNum < 1): return __401_Book_not_enough()
+    now_book.existingNum = now_book.existingNum - 1
+    session.add(now_book)
+    session.commit()
 
     # 13 位 Unix 时间戳要先转为 float
     borrow_date = datetime.fromtimestamp(int(request.json.get('rcdBorrowDate')) / 1000)
@@ -588,13 +598,21 @@ def return_book(got_rid):
     now_token = request.headers.get('token')
     try: now_uid = decode_token(now_token)
     except: return __401_Invalid_token()
+
     now_user = session.query(User).filter_by(id = now_uid).first()
     if (not now_user): return __401_Invalid_token()
 
-    return_date = datetime.fromtimestamp(int(request.json.get('rcdReturnDate')) / 1000)
-    if (not request.json.get('rcdReturnDate')): return_date = datetime.now()
     now_record = session.query(Record).filter_by(id = got_rid).first()
     if (not now_record): return __401_No_such_record()
+
+    now_book = session.query(Book).filter_by(id = now_record.bookId).first()
+    if (not now_book): return __401_No_such_book()
+
+    if (now_book.existingNum + 1 > now_book.totalNum): return __401_Too_many_books()
+    now_book.existingNum = now_book.existingNum + 1
+
+    if (request.json.get('rcdReturnDate')): return_date = datetime.fromtimestamp(int(request.json.get('rcdReturnDate')) / 1000)
+    else :return_date = datetime.now()
 
     now_record.returned = True
     now_record.returnDate = return_date
