@@ -672,7 +672,7 @@ def search_records():
             ),
             or_(
                 or_(not request.args.get('minReturnDate'), not request.args.get('maxReturnDate')), 
-                and_(Record.borrowDate >= minReturnDate, Record.borrowDate <= maxReturnDate)
+                and_(Record.returnDate >= minReturnDate, Record.returnDate <= maxReturnDate, Record.returned)
             ),
             or_(Record.returned == request.args.get('returned'), not request.args.get('returned')),
         )
