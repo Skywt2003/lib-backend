@@ -261,7 +261,7 @@ def del_user(got_uid):
         if (now_user.id != got_uid): return __401_Permission_denied()
 
     # 检测是否归还了所有书籍
-    not_returned = session.query(Book).filter_by(userId = now_uid, returned = False).all()
+    not_returned = session.query(Record).filter_by(userId = now_uid, returned = False).all()
     if (not_returned): return __401_Books_not_returned()
 
     got_user = session.query(User).filter_by(id = got_uid).first()
@@ -438,7 +438,7 @@ def search_books():
             or_(Book.author.like('%' + None2str(request.args.get('author')) + '%'), not request.args.get('author')),
         )
     else:
-        got_filter = session.query(Book).all()
+        got_filter = session.query(Book)
 
     offset_data = page_size * (page - 1)
     got_books = got_filter.offset(offset_data).limit(page_size).all()
