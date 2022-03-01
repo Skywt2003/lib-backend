@@ -24,7 +24,7 @@ from datetime import datetime, timedelta
 # import mysql.connector
 # from mysqlx import ColumnMetaData
 
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, redirect
 from flask_cors import CORS
 
 from sqlalchemy import Column, ForeignKey, String, Integer, DateTime, Boolean, create_engine, or_, and_
@@ -210,6 +210,14 @@ app = Flask(__name__, static_folder = 'public', static_url_path = '/')
 
 # 允许跨域请求
 # CORS(app, resources = r'/*')
+
+@app.route('/')
+def redir():
+    return redirect('/index.html')
+
+@app.errorhandler(404)
+def page_not_found(error):
+    return redirect('404.html')
 
 # 根目录的友情提示（已测试）
 @app.route('/api/')
