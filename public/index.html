@@ -58,8 +58,8 @@
         <transition name="el-fade-in-linear">
             <div class="result" v-show="searchResult.haveResult">
                 <div class="head">
-                    <h3>搜索结果</h3>
-                    <el-pagination v-show="searchResult.haveResult" background layout="prev, pager, next"
+                    <h3>搜索结果，共为您找到 {{ pagination.total }} 本书籍</h3>
+                    <el-pagination hide-on-single-page v-show="searchResult.haveResult" background layout="prev, pager, next"
                         @current-change="currnetPageChange" :current-page="pagination.currentPage"
                         :page-size="pagination.pageSize" :total="pagination.total">
                     </el-pagination>
@@ -81,7 +81,7 @@
                     </el-card>
                 </div>
                 <div class="foot" v-show="searchResult.haveResult">
-                    <el-pagination background layout="prev, pager, next" @current-change="currnetPageChange"
+                    <el-pagination hide-on-single-page background layout="prev, pager, next" @current-change="currnetPageChange"
                         :current-page="pagination.currentPage" :page-size="pagination.pageSize"
                         :total="pagination.total"></el-pagination>
                 </div>
@@ -115,7 +115,7 @@
                         currentType: '',
                         haveResult: false,
                         loading: true,
-                        data: []
+                        data: [],
                     },
                     formSearch: {
                         type: "name",
@@ -213,9 +213,12 @@
                     this.searchResult.currentType = type;
                     this.searchResult.haveResult = true;
 
-                    axios.get(`/books?${type}=${kw}`, {
+                    axios.get(`/books`, {
                         headers: {
                             'token': loginInfo.getToken()
+                        },
+                        params: {
+                            [type]: kw
                         }
                     })
                         .then((v) => {
