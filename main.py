@@ -132,13 +132,21 @@ def maintain_token(token):
 # 参数：email
 # 返回：是否合法
 def check_email(email):
-    return True
+    rex = r'(^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$)'
+    return bool(re.match(rex, email))
 
 # 验证密码合法性
 # 参数：密码明文
 # 返回：密码是否合法
 def check_pass(passwd):
-    return True
+    if (len(passwd) < 8 or len(passwd) > 16): return False
+    have_num = have_letter = False
+    for char in passwd:
+        if (ord('a') <= ord(char) and ord(char) <= ord('z')): have_letter = True
+        elif (ord('A') <= ord(char) and ord(char) <= ord('Z')): have_letter = True
+        elif (ord('0') <= ord(char) and ord(char) <= ord('9')): have_num = True
+        else: return False
+    return (have_num and have_letter)
 
 # Wash 如果是空串就返回 None 将字段值设置为 NULL
 # 特别用于数据库字段类型不是字符串（无法存储空串）的数据清洗
@@ -171,6 +179,9 @@ def __401_User_disabled():
     return jsonify({'status': 401, 'data': {}, 'msg': '该用户已禁用。'}), 200
 def __401_No_such_user():
     return jsonify({'status': 401, 'data': {}, 'msg': '该用户不存在。'}), 200
+
+def __401_Invalid_data():
+    return jsonify({'status': 401, 'data': {}, 'msg': '数据不符合要求。可能是邮件地址不合法、密码不符合安全策略、信息长度、范围不合规等。'}), 200
 
 def __401_No_such_book():
     return jsonify({'status': 401, 'data': {}, 'msg': '该书籍不存在。'}), 200
@@ -241,12 +252,10 @@ def add_user():
     else: new_group = 1
 
     new_email = request.json.get('userEmail')
-    print('user_email = ', new_email)
-    # 设置默认密码为 123456
-    # new_passwd = request.json.get('userPwd')
-    new_passwd = '123456'
-    if (not check_email(new_email) or not check_pass(new_passwd)):
-        return __401_Incorrect_login()
+    new_passwd = request.json.get('userPwd')
+    if (not new_passwd): new_passwd = conf['users']['default_pass']
+    if (not check_email(new_email) or not check_pass(new_passwd)): return __401_Invalid_data()
+
     new_user = User(
         email = new_email,
         passwd = get_hash(new_passwd),
