@@ -160,27 +160,27 @@ def None2str(inp):
 
 # 返回信息和代码的统一定义
 def __401_Incorrect_login():
-    return jsonify({'status': 401, 'data': {}, 'msg': 'Invalid email or password. '}), 200
+    return jsonify({'status': 401, 'data': {}, 'msg': '邮箱或密码错误。'}), 200
 def __401_Permission_denied():
-    return jsonify({'status': 401, 'data': {}, 'msg': 'Permission denied. '}), 200
+    return jsonify({'status': 401, 'data': {}, 'msg': '没有权限。请使用管理员账号操作。'}), 200
 def __401_Invalid_token():
-    return jsonify({'status': 401, 'data': {}, 'msg': 'Invalid token. '}), 200
+    return jsonify({'status': 401, 'data': {}, 'msg': '用户 Token 失效。请尝试重新登录。'}), 200
 def __401_Books_not_returned():
-    return jsonify({'status': 401, 'data': {}, 'msg': 'Books not returned. '}), 200
+    return jsonify({'status': 401, 'data': {}, 'msg': '还有图书未归还，无法注销账号。'}), 200
 def __401_User_disabled():
-    return jsonify({'status': 401, 'data': {}, 'msg': 'The user is disabled. '}), 200
+    return jsonify({'status': 401, 'data': {}, 'msg': '该用户已禁用。'}), 200
 def __401_No_such_user():
-    return jsonify({'status': 401, 'data': {}, 'msg': 'No such user. '}), 200
+    return jsonify({'status': 401, 'data': {}, 'msg': '该用户不存在。'}), 200
 
 def __401_No_such_book():
-    return jsonify({'status': 401, 'data': {}, 'msg': 'No such book. '}), 200
+    return jsonify({'status': 401, 'data': {}, 'msg': '该书籍不存在。'}), 200
 def __401_Book_not_enough():
-    return jsonify({'status': 401, 'data': {}, 'msg': 'Book not enough. '}), 200
+    return jsonify({'status': 401, 'data': {}, 'msg': '书籍库存不足。'}), 200
 def __401_Too_many_books():
-    return jsonify({'status': 401, 'data': {}, 'msg': 'Too many books. '}), 200
+    return jsonify({'status': 401, 'data': {}, 'msg': '请求错误。书籍库存过多。'}), 200
 
 def __401_No_such_record():
-    return jsonify({'status': 401, 'data': {}, 'msg': 'No such record. '}), 200
+    return jsonify({'status': 401, 'data': {}, 'msg': '该记录不存在。'}), 200
 
 def __200_OK():
     return jsonify({'status': 200, 'data': {}, 'msg': 'OK'}), 200
