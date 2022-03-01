@@ -13,7 +13,7 @@ import math
 
 import hashlib
 from pickle import NEWOBJ_EX
-from re import M
+from re import L, M
 import re
 from sys import get_coroutine_origin_tracking_depth
 
@@ -179,9 +179,13 @@ def __401_User_disabled():
     return jsonify({'status': 401, 'data': {}, 'msg': '该用户已禁用。'}), 200
 def __401_No_such_user():
     return jsonify({'status': 401, 'data': {}, 'msg': '该用户不存在。'}), 200
+def __401_Email_exist():
+    return jsonify({'status': 401, 'data': {}, 'msg': '该邮箱已存在。'}), 200
 
 def __401_Invalid_data():
     return jsonify({'status': 401, 'data': {}, 'msg': '数据不符合要求。可能是邮件地址不合法、密码不符合安全策略、信息长度、范围不合规等。'}), 200
+def  __401_Modify_failed():
+    return jsonify({'status': 401, 'data': {}, 'msg': '数据更新失败。请稍后重试或联系管理员。'}), 200
 
 def __401_No_such_book():
     return jsonify({'status': 401, 'data': {}, 'msg': '该书籍不存在。'}), 200
@@ -214,6 +218,8 @@ if (not now_user):
         group = 0
     )
     session.add(new_user)
+    # 遗留问题：如果数据库中有用户名为 root_email 的用户但不是根用户，这里没有处理数据库插入异常的情况
+    # 还需要设计相关的业务逻辑
     session.commit()
 
 # --------------
@@ -256,6 +262,9 @@ def add_user():
     if (not new_passwd): new_passwd = conf['users']['default_pass']
     if (not check_email(new_email) or not check_pass(new_passwd)): return __401_Invalid_data()
 
+    have_user = session.query(User).filter_by(email = new_email).first()
+    if (have_user): return __401_Email_exist()
+
     new_user = User(
         email = new_email,
         passwd = get_hash(new_passwd),
@@ -267,7 +276,11 @@ def add_user():
         group = new_group
     )
     session.add(new_user)
-    session.commit()
+    try:
+        session.commit()
+    except:
+        session.rollback()
+        return __401_Modify_failed()
     return __200_OK()
 
 # 删除用户（已测试）
@@ -276,7 +289,7 @@ def del_user(got_uid):
     now_token = request.headers.get('token')
 
     try: now_uid = decode_token(now_token)
-    except: return __401_Invalid_token()
+    except: session.rollback();return __401_Invalid_token()
     now_user = session.query(User).filter_by(id = now_uid).first()
     if (now_user.group != 0):
         if (now_user.id != got_uid): return __401_Permission_denied()
@@ -288,7 +301,11 @@ def del_user(got_uid):
     got_user = session.query(User).filter_by(id = got_uid).first()
     if (not got_user): return __401_No_such_user()
     session.delete(got_user)
-    session.commit()
+    try:
+        session.commit()
+    except:
+        session.rollback()
+        return __401_Modify_failed()
     return __200_OK()
 
 # 用户登录（已测试）
@@ -350,7 +367,11 @@ def post_info(got_uid):
     if (new_age): got_user.age = new_age
     if (new_bio): got_user.bio = new_bio
     session.add(got_user)
-    session.commit()
+    try: 
+        session.commit()
+    except:
+        session.rollback()
+        return __401_Modify_failed()
     return __200_OK()
 
 # 更改用户密码
@@ -506,7 +527,11 @@ def add_book():
         totalNum = request.json.get('bookTotalNumber')
     )
     session.add(new_book)
-    session.commit()
+    try:
+        session.commit()
+    except:
+        session.rollback()
+        return __401_Modify_failed()
     return __200_Return_data({
         'bookId': new_book.id,
         'bookName': new_book.name,
@@ -530,7 +555,11 @@ def del_book(got_bid):
     got_book = session.query(Book).filter_by(id = got_bid).first()
     if (not got_book): return __401_No_such_book()
     session.delete(got_book)
-    session.commit()
+    try:
+        session.commit()
+    except:
+        session.rollback()
+        return __401_Modify_failed()
     return __200_OK()
 
 # 修改书籍信息
@@ -558,8 +587,13 @@ def change_book_info(got_bid):
     if (new_press): got_book.press = new_press
     if (new_existingNum): got_book.existingNum = new_existingNum
     if (new_totalNum): got_book.totalNum = new_totalNum
+
     session.add(got_book)
-    session.commit()
+    try:
+        session.commit()
+    except:
+        session.rollback()
+        return __401_Modify_failed()
     return __200_OK()
 
 # --------------
@@ -584,8 +618,13 @@ def borrow_book():
 
     if (now_book.existingNum < 1): return __401_Book_not_enough()
     now_book.existingNum = now_book.existingNum - 1
+
     session.add(now_book)
-    session.commit()
+    try:
+        session.commit()
+    except:
+        session.rollback()
+        return __401_Modify_failed()
 
     # 13 位 Unix 时间戳要先转为 float
     borrow_date = datetime.fromtimestamp(int(request.json.get('rcdBorrowDate')) / 1000)
@@ -598,7 +637,11 @@ def borrow_book():
         returned = False
     )
     session.add(new_record)
-    session.commit()
+    try:
+        session.commit()
+    except:
+        session.rollback()
+        return __401_Modify_failed()
     return __200_OK()
 
 # 归还图书
@@ -626,7 +669,11 @@ def return_book(got_rid):
     now_record.returned = True
     now_record.returnDate = return_date
     session.add(now_record)
-    session.commit()
+    try:
+        session.commit()
+    except:
+        session.rollback()
+        return __401_Modify_failed()
     return __200_OK()
 
 # 删除记录
@@ -643,7 +690,11 @@ def del_record(got_rid):
     if (not now_record): return __401_No_such_record()
 
     session.delete(now_record)
-    session.commit()
+    try:
+        session.commit()
+    except:
+        session.rollback()
+        return __401_Modify_failed()
     return __200_OK()
 
 # 查询记录
